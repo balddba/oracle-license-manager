@@ -1,0 +1,773 @@
+# Oracle Processor Core Factor Table (document 070634)
+# Source: https://www.oracle.com/contracts/docs/processor-core-factor-table-070634.pdf
+# Effective: 2009-03-16; Updated: 2026-01-28
+#
+# match_pattern is matched as a case-insensitive substring of the reported CPU model.
+# Higher priority wins when multiple patterns match. is_default is the fallback.
+
+source_url: https://www.oracle.com/contracts/docs/processor-core-factor-table-070634.pdf
+document_id: processor-core-factor-table-070634
+effective_date: "2009-03-16"
+updated: "2026-01-28"
+factors:
+  # --- 0.25 ---
+  - name: Sun/Fujitsu UltraSPARC T1 1.4 GHz
+    match_pattern: ultrasparc t1 1.4
+    core_factor: 0.5
+    priority: 120
+    is_default: false
+    notes: Named T2000 servers with 8-core 1.4 GHz UltraSPARC T1; factor 0.5
+
+  - name: Sun T6300 UltraSPARC T1 1.4 GHz
+    match_pattern: t6300
+    core_factor: 0.5
+    priority: 115
+    is_default: false
+    notes: Sun T6300 with 1.4 GHz UltraSPARC T1
+
+  - name: Sun/Fujitsu UltraSPARC T1 (1.0/1.2 GHz)
+    match_pattern: ultrasparc t1
+    core_factor: 0.25
+    priority: 100
+    is_default: false
+    notes: Named T1000/T2000/Netra servers with 1.0 or 1.2 GHz UltraSPARC T1
+
+  - name: Sun Netra T2000 UltraSPARC T1
+    match_pattern: netra t2000
+    core_factor: 0.25
+    priority: 105
+    is_default: false
+    notes: Sun Netra T2000 with UltraSPARC T1
+
+  - name: SPARC T3 processor
+    match_pattern: sparc t3
+    core_factor: 0.25
+    priority: 100
+    is_default: false
+    notes: null
+
+  - name: Ampere Altra / AltraMax / AmpereOne
+    match_pattern: ampere
+    core_factor: 0.25
+    priority: 100
+    is_default: false
+    notes: Ampere Altra, AltraMax, and AmpereOne
+
+  - name: Ampere Altra
+    match_pattern: altra
+    core_factor: 0.25
+    priority: 95
+    is_default: false
+    notes: Ampere Altra / AltraMax (model string may omit Ampere)
+
+  # --- AMD EPYC / Opteron 0.5 ---
+  - name: AMD EPYC 9005/9004 Series
+    match_pattern: epyc 9
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: AMD EPYC 9005 and 9004 series (including F/P variants)
+
+  - name: AMD EPYC 8004 Series
+    match_pattern: epyc 8
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: AMD EPYC 8004 series
+
+  - name: AMD EPYC 7003/7002/7001 Series
+    match_pattern: epyc 7
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: AMD EPYC 7003, 7002, and 7001 series (including P variants)
+
+  - name: AMD EPYC 4005/4004 Series
+    match_pattern: epyc 4
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: AMD EPYC 4005 and 4004 series
+
+  - name: AMD Opteron Multicore
+    match_pattern: opteron
+    core_factor: 0.5
+    priority: 80
+    is_default: false
+    notes: AMD Opteron 6300/6200/6100/4300/3300/3200 series or earlier multicore
+
+  # --- Intel Xeon named tiers 0.5 ---
+  - name: Intel Xeon 69xxP
+    match_pattern: xeon 69
+    core_factor: 0.5
+    priority: 85
+    is_default: false
+    notes: Intel Xeon 69xxP and 69xxP-B
+
+  - name: Intel Xeon 67xxE/P
+    match_pattern: xeon 67
+    core_factor: 0.5
+    priority: 85
+    is_default: false
+    notes: Intel Xeon 67xxE, 67xxP, and -B variants
+
+  - name: Intel Xeon 65xxP
+    match_pattern: xeon 65
+    core_factor: 0.5
+    priority: 85
+    is_default: false
+    notes: Intel Xeon 65xxP and 65xxP-B (not Gold 65xx)
+
+  - name: Intel Xeon 63xxP
+    match_pattern: xeon 63
+    core_factor: 0.5
+    priority: 85
+    is_default: false
+    notes: Intel Xeon 63xxP and 63xxP-B (not Gold 63xx)
+
+  - name: Intel Xeon Platinum HPC MAX 94xx
+    match_pattern: hpc max 94
+    core_factor: 0.5
+    priority: 88
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 94xx
+    match_pattern: platinum 94
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 92xx
+    match_pattern: platinum 92
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 85xx
+    match_pattern: platinum 85
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: Platinum 8592/Q/V/+ and Platinum 85xx variants
+
+  - name: Intel Xeon Platinum 84xx
+    match_pattern: platinum 84
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 83xx
+    match_pattern: platinum 83
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 82xx
+    match_pattern: platinum 82
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Platinum 81xx
+    match_pattern: platinum 81
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 65xx
+    match_pattern: gold 65
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 64xx
+    match_pattern: gold 64
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 63xx
+    match_pattern: gold 63
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 62xx
+    match_pattern: gold 62
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 61xx
+    match_pattern: gold 61
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 55xx
+    match_pattern: gold 55
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 54xx
+    match_pattern: gold 54
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 53xx
+    match_pattern: gold 53
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 52xx
+    match_pattern: gold 52
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Gold 51xx
+    match_pattern: gold 51
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Silver 45xx
+    match_pattern: silver 45
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Silver 44xx
+    match_pattern: silver 44
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Silver 43xx
+    match_pattern: silver 43
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Silver 42xx
+    match_pattern: silver 42
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Silver 41xx
+    match_pattern: silver 41
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Bronze 35xx
+    match_pattern: bronze 35
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Bronze 34xx
+    match_pattern: bronze 34
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Bronze 32xx
+    match_pattern: bronze 32
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon Bronze 31xx
+    match_pattern: bronze 31
+    core_factor: 0.5
+    priority: 86
+    is_default: false
+    notes: null
+
+  # --- Intel Xeon E-series / E7 / E5 / E3 0.5 ---
+  - name: Intel Xeon E-24xx
+    match_pattern: e-24
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E-23xx
+    match_pattern: e-23
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E-22xx
+    match_pattern: e-22
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E-21xx
+    match_pattern: e-21
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E7-88xx
+    match_pattern: e7-88
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E7-48xx
+    match_pattern: e7-48
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E7-28xx
+    match_pattern: e7-28
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E5-46xx
+    match_pattern: e5-46
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E5-26xx
+    match_pattern: e5-26
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E5-24xx
+    match_pattern: e5-24
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E5-16xx
+    match_pattern: e5-16
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E5-14xx
+    match_pattern: e5-14
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E3-15xx
+    match_pattern: e3-15
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E3-12xx
+    match_pattern: e3-12
+    core_factor: 0.5
+    priority: 84
+    is_default: false
+    notes: null
+
+  # --- Older Intel Xeon series 0.5 ---
+  - name: Intel Xeon E75xx / L75xx / X75xx
+    match_pattern: e75
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon L75xx
+    match_pattern: l75
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X75xx
+    match_pattern: x75
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E65xx
+    match_pattern: e65
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X65xx
+    match_pattern: x65
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E56xx
+    match_pattern: e56
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon L56xx
+    match_pattern: l56
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X56xx
+    match_pattern: x56
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X55xx
+    match_pattern: x55
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon E54xx
+    match_pattern: e54
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X54xx
+    match_pattern: x54
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon X34xx
+    match_pattern: x34
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Xeon 51xx
+    match_pattern: xeon 51
+    core_factor: 0.5
+    priority: 82
+    is_default: false
+    notes: null
+
+  - name: Intel Itanium Series 93XX (pre-Dec 2010 purchase)
+    match_pattern: itanium 93
+    core_factor: 1.0
+    priority: 70
+    is_default: false
+    notes: >-
+      Table lists 0.5 for servers purchased before Dec 1 2010 and 1.0 on/after.
+      Conservative default is 1.0 when purchase date is unknown.
+
+  - name: Intel Itanium Series 95XX
+    match_pattern: itanium 95
+    core_factor: 1.0
+    priority: 70
+    is_default: false
+    notes: null
+
+  - name: Intel/AMD Desktop or Laptop Multicore
+    match_pattern: core i
+    core_factor: 0.5
+    priority: 40
+    is_default: false
+    notes: Intel or AMD desktop, laptop/notebook, or netbook multicore chips
+
+  - name: Intel Core Desktop Multicore
+    match_pattern: core(tm)
+    core_factor: 0.5
+    priority: 40
+    is_default: false
+    notes: Intel Core desktop/laptop multicore chips
+
+  # --- SPARC / Sun 0.5 ---
+  - name: Sun UltraSPARC T2+
+    match_pattern: ultrasparc t2+
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: Sun UltraSPARC T2+
+    match_pattern: ultrasparc t2 plus
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC64 VII+
+    match_pattern: sparc64 vii+
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC64 XII
+    match_pattern: sparc64 xii
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC64 X+
+    match_pattern: sparc64 x+
+    core_factor: 0.5
+    priority: 91
+    is_default: false
+    notes: null
+
+  - name: SPARC64 X
+    match_pattern: sparc64 x
+    core_factor: 0.5
+    priority: 88
+    is_default: false
+    notes: Matches SPARC64 X and SPARC64 X+ when X+ pattern does not apply
+
+  - name: SPARC T4 processor
+    match_pattern: sparc t4
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC T5
+    match_pattern: sparc t5
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC M8
+    match_pattern: sparc m8
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC M7
+    match_pattern: sparc m7
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC M6
+    match_pattern: sparc m6
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC M5
+    match_pattern: sparc m5
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  - name: SPARC S7
+    match_pattern: sparc s7
+    core_factor: 0.5
+    priority: 90
+    is_default: false
+    notes: null
+
+  # --- 0.75 ---
+  - name: Sun/Fujitsu SPARC64 VI / VII
+    match_pattern: sparc64 vi
+    core_factor: 0.75
+    priority: 75
+    is_default: false
+    notes: SPARC64 VI and VII (not VII+)
+
+  - name: Sun/Fujitsu SPARC64 VII
+    match_pattern: sparc64 vii
+    core_factor: 0.75
+    priority: 74
+    is_default: false
+    notes: SPARC64 VII (VII+ is 0.5 and matched at higher priority)
+
+  - name: Sun UltraSPARC IV / IV+
+    match_pattern: ultrasparc iv
+    core_factor: 0.75
+    priority: 75
+    is_default: false
+    notes: UltraSPARC IV, IV+, or earlier multicore
+
+  - name: Sun UltraSPARC T2
+    match_pattern: ultrasparc t2
+    core_factor: 0.75
+    priority: 70
+    is_default: false
+    notes: UltraSPARC T2 (T2+ is 0.5 and matched at higher priority)
+
+  - name: HP PA-RISC
+    match_pattern: pa-risc
+    core_factor: 0.75
+    priority: 70
+    is_default: false
+    notes: null
+
+  - name: HP PA-RISC
+    match_pattern: parisc
+    core_factor: 0.75
+    priority: 70
+    is_default: false
+    notes: null
+
+  - name: IBM POWER5+ or earlier
+    match_pattern: power5
+    core_factor: 0.75
+    priority: 70
+    is_default: false
+    notes: IBM POWER5+ or earlier multicore
+
+  # --- 1.0 specific families ---
+  - name: IBM POWER10
+    match_pattern: power10
+    core_factor: 1.0
+    priority: 80
+    is_default: false
+    notes: null
+
+  - name: IBM POWER9
+    match_pattern: power9
+    core_factor: 1.0
+    priority: 80
+    is_default: false
+    notes: null
+
+  - name: IBM POWER8
+    match_pattern: power8
+    core_factor: 1.0
+    priority: 80
+    is_default: false
+    notes: null
+
+  - name: IBM POWER7+
+    match_pattern: power7+
+    core_factor: 1.0
+    priority: 81
+    is_default: false
+    notes: null
+
+  - name: IBM POWER7
+    match_pattern: power7
+    core_factor: 1.0
+    priority: 80
+    is_default: false
+    notes: null
+
+  - name: IBM POWER6
+    match_pattern: power6
+    core_factor: 1.0
+    priority: 80
+    is_default: false
+    notes: null
+
+  - name: IBM Z
+    match_pattern: ibm z
+    core_factor: 1.0
+    priority: 70
+    is_default: false
+    notes: IBM Z (z16, z15, z14, z13, z(EC)12, z196, z11, z10 and earlier)
+
+  - name: IBM z16
+    match_pattern: z16
+    core_factor: 1.0
+    priority: 65
+    is_default: false
+    notes: IBM Z z16
+
+  - name: IBM z15
+    match_pattern: z15
+    core_factor: 1.0
+    priority: 65
+    is_default: false
+    notes: IBM Z z15
+
+  - name: All other ARM
+    match_pattern: aarch64
+    core_factor: 1.0
+    priority: 30
+    is_default: false
+    notes: ARM processors other than Ampere Altra/AltraMax/AmpereOne
+
+  - name: All other ARM
+    match_pattern: armv8
+    core_factor: 1.0
+    priority: 30
+    is_default: false
+    notes: ARM processors other than Ampere Altra/AltraMax/AmpereOne
+
+  - name: All other ARM
+    match_pattern: arm64
+    core_factor: 1.0
+    priority: 30
+    is_default: false
+    notes: ARM processors other than Ampere Altra/AltraMax/AmpereOne
+
+  # --- Default fallback 1.0 ---
+  - name: All Other Multicore chips
+    match_pattern: "*"
+    core_factor: 1.0
+    priority: 0
+    is_default: true
+    notes: >-
+      Oracle default for multicore chips not listed in the Processor Core Factor Table.
+      Also used when the CPU model is unknown. Single-core chips are also factor 1.0.

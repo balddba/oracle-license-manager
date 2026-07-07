@@ -1,0 +1,14 @@
+[tool.uv.workspace]
+members = ["backend"]
+
+[project]
+name = "oracle-ilcense-tracking"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+]

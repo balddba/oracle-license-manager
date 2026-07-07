@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: license-tracker-api
+    environment:
+      LICENSE_TRACKER_CONFIG_PATH: /app/config/license-tracker.yaml
+      LICENSE_TRACKER_CORS_ORIGINS: '["http://localhost:8080"]'
+      LICENSE_TRACKER_SQLITE_PATH: ${LICENSE_TRACKER_SQLITE_PATH:-data/db/license_tracker.db}
+    volumes:
+      - ${LICENSE_TRACKER_SQLITE_HOST_PATH:-./data/db}:/app/data/db
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: license-tracker-ui
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

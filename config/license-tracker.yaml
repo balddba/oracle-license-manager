@@ -1,0 +1,11 @@
+database_backend: sqlite
+sqlite:
+  path: data/db/license_tracker.db
+oracle:
+  host: localhost
+  port: 1521
+  service_name: XEPDB1
+  user: license_tracker
+ssh:
+  default_port: 22
+  connect_timeout_seconds: 15
