@@ -2,6 +2,7 @@
 name = "license-tracker"
 version = "0.4.0"
 description = "Oracle license tracking API"
+license = { text = "AGPL-3.0-only" }
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.20.0",
