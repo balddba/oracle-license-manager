@@ -1,6 +1,6 @@
 [project]
 name = "license-tracker"
-version = "0.1.0"
+version = "0.4.0"
 description = "Oracle license tracking API"
 requires-python = ">=3.13"
 dependencies = [

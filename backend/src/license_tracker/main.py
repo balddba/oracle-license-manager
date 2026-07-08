@@ -40,7 +40,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="Oracle License Manager",
-        version="0.1.0",
+        version="0.4.0",
         lifespan=lifespan,
     )
     app.add_middleware(

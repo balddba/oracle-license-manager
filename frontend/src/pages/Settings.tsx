@@ -123,7 +123,7 @@ export function Settings() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-border/30 flex items-center justify-between">
-            <span className="text-xs text-muted">Version: 0.1.0 (Developer Beta)</span>
+            <span className="text-xs text-muted">Version: 0.4.0 (Developer Beta)</span>
             <Button variant="tertiary" className="text-xs font-semibold cursor-default" isDisabled>
               Connection Healthy
             </Button>
