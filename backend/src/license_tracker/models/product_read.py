@@ -17,6 +17,7 @@ class ProductRead(BaseModel):
 
     id: uuid.UUID
     agreement_id: uuid.UUID
+    product_id: uuid.UUID
     product_name: str
     option_name: str | None
     metric: LicenseMetric

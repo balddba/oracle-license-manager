@@ -93,6 +93,7 @@ function ProductForm({
   onCancel,
   isPending,
   submitLabel,
+  categories,
 }: {
   title: string;
   form: ProductFormState;
@@ -101,32 +102,42 @@ function ProductForm({
   onCancel?: () => void;
   isPending: boolean;
   submitLabel: string;
+  categories: string[];
 }) {
   const canSubmit = Boolean(form.category.trim() && form.product_name.trim() && form.price_list_id.trim());
+
+  const formCategoryOptions = [
+    { value: "", label: "Select category..." },
+    ...categories.map((name) => ({ value: name, label: name })),
+  ];
 
   return (
     <Card className="space-y-3 p-4">
       <h3 className="font-medium">{title}</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField
-          label="Category"
-          value={form.category}
-          onChange={(e) => setForm((current) => ({ ...current, category: e.target.value }))}
-        />
-        <FormField
           label="Product name"
           value={form.product_name}
           onChange={(e) => setForm((current) => ({ ...current, product_name: e.target.value }))}
+          placeholder="e.g., Oracle Database Enterprise Edition"
+        />
+        <SelectField
+          label="Category"
+          value={form.category}
+          onChange={(e) => setForm((current) => ({ ...current, category: e.target.value }))}
+          options={formCategoryOptions}
         />
         <FormField
           label="Option name"
           value={form.option_name}
           onChange={(e) => setForm((current) => ({ ...current, option_name: e.target.value }))}
+          placeholder="e.g., Diagnostics Pack"
         />
         <FormField
           label="Price list id"
           value={form.price_list_id}
           onChange={(e) => setForm((current) => ({ ...current, price_list_id: e.target.value }))}
+          placeholder="e.g., technology-price-list-070617"
         />
         <FormField
           label="NUP list price (USD)"
@@ -137,6 +148,7 @@ function ProductForm({
           onChange={(e) =>
             setForm((current) => ({ ...current, list_price_nup_usd: e.target.value }))
           }
+          placeholder="e.g., 950.00"
         />
         <FormField
           label="NUP support price (USD)"
@@ -147,6 +159,7 @@ function ProductForm({
           onChange={(e) =>
             setForm((current) => ({ ...current, list_price_nup_support_usd: e.target.value }))
           }
+          placeholder="e.g., 209.00"
         />
         <FormField
           label="Processor list price (USD)"
@@ -157,6 +170,7 @@ function ProductForm({
           onChange={(e) =>
             setForm((current) => ({ ...current, list_price_processor_usd: e.target.value }))
           }
+          placeholder="e.g., 47500.00"
         />
         <FormField
           label="Processor support price (USD)"
@@ -170,6 +184,7 @@ function ProductForm({
               list_price_processor_support_usd: e.target.value,
             }))
           }
+          placeholder="e.g., 10450.00"
         />
       </div>
       <div className="flex flex-wrap gap-4 text-sm">
@@ -210,20 +225,36 @@ function ProductForm({
 
 export function CatalogProducts() {
   const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [createForm, setCreateForm] = useState<ProductFormState>(emptyForm);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
+  const [form, setForm] = useState<ProductFormState>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<CatalogProduct | null>(null);
 
-  useEffect(() => {
-    const query = searchParams.get("search");
-    if (query) {
-      setSearch(query);
-    }
-  }, [searchParams]);
+  const setSearch = (val: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) {
+        next.set("search", val);
+      } else {
+        next.delete("search");
+      }
+      return next;
+    }, { replace: true });
+  };
+
+  const setCategory = (val: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) {
+        next.set("category", val);
+      } else {
+        next.delete("category");
+      }
+      return next;
+    }, { replace: true });
+  };
 
   const { data: categories = [] } = useQuery({
     queryKey: ["catalog-categories"],
@@ -246,9 +277,9 @@ export function CatalogProducts() {
   };
 
   const createMutation = useMutation({
-    mutationFn: () => api.createCatalogProduct(formToPayload(createForm)),
+    mutationFn: () => api.createCatalogProduct(formToPayload(form)),
     onSuccess: () => {
-      setCreateForm(emptyForm());
+      setForm(emptyForm());
       invalidateCatalog();
       toast.success("Catalog product created");
     },
@@ -262,11 +293,11 @@ export function CatalogProducts() {
       if (!editingId) {
         throw new Error("No product selected for update");
       }
-      return api.updateCatalogProduct(editingId, formToPayload(editForm));
+      return api.updateCatalogProduct(editingId, formToPayload(form));
     },
     onSuccess: () => {
       setEditingId(null);
-      setEditForm(emptyForm());
+      setForm(emptyForm());
       invalidateCatalog();
       toast.success("Catalog product updated");
     },
@@ -288,12 +319,13 @@ export function CatalogProducts() {
   });
 
   useEffect(() => {
-    if (!editingId || !data) {
-      return;
-    }
-    const product = data.find((row) => row.id === editingId);
-    if (product) {
-      setEditForm(productToForm(product));
+    if (editingId && data) {
+      const product = data.find((row) => row.id === editingId);
+      if (product) {
+        setForm(productToForm(product));
+      }
+    } else {
+      setForm(emptyForm());
     }
   }, [editingId, data]);
 
@@ -318,6 +350,30 @@ export function CatalogProducts() {
         </p>
       </div>
 
+      <ProductForm
+        title={editingId ? `Edit product: ${form.product_name || "Untitled"}` : "New product"}
+        form={form}
+        setForm={setForm}
+        onSubmit={() => {
+          if (editingId) {
+            updateMutation.mutate();
+          } else {
+            createMutation.mutate();
+          }
+        }}
+        onCancel={
+          editingId
+            ? () => {
+                setEditingId(null);
+                setForm(emptyForm());
+              }
+            : undefined
+        }
+        isPending={editingId ? updateMutation.isPending : createMutation.isPending}
+        submitLabel={editingId ? "Save changes" : "Create product"}
+        categories={categories}
+      />
+
       <Card className="space-y-3 p-4">
         <h3 className="font-medium">Search</h3>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -335,30 +391,6 @@ export function CatalogProducts() {
           />
         </div>
       </Card>
-
-      <ProductForm
-        title="New product"
-        form={createForm}
-        setForm={setCreateForm}
-        onSubmit={() => createMutation.mutate()}
-        isPending={createMutation.isPending}
-        submitLabel="Create product"
-      />
-
-      {editingId ? (
-        <ProductForm
-          title="Edit product"
-          form={editForm}
-          setForm={setEditForm}
-          onSubmit={() => updateMutation.mutate()}
-          onCancel={() => {
-            setEditingId(null);
-            setEditForm(emptyForm());
-          }}
-          isPending={updateMutation.isPending}
-          submitLabel="Save changes"
-        />
-      ) : null}
 
       <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="min-w-full text-sm">

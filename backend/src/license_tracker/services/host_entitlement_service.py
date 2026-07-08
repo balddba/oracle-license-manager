@@ -116,15 +116,13 @@ class HostEntitlementService:
         if host is None:
             raise ValueError("Host not found")
 
-        option_name = _normalize_option_name(data.option_name)
         # Determine the database metric required (e.g. processor vs user)
         metric = metric_for_license_type(host.license_type)
 
         # Confirm the product is not already assigned to avoid duplicates
         existing = await self._db.find_host_entitlement(
             host_id,
-            data.product_name,
-            option_name,
+            data.product_id,
         )
         if existing is not None:
             raise ValueError("Product is already assigned to this host")
@@ -134,7 +132,6 @@ class HostEntitlementService:
             host_id,
             data,
             metric=metric,
-            option_name=option_name,
         )
 
     async def unassign_product(self, host_id: uuid.UUID, assignment_id: uuid.UUID) -> bool:
@@ -191,7 +188,8 @@ class HostEntitlementService:
             HostProductRead(
                 id=row.id,
                 host_id=row.host_id,
-                product_name=row.product_name,
+                product_id=row.product_id,
+                product_name=row.product_name or "",
                 option_name=row.option_name or None,
                 license_type=license_type,
                 metric=row.metric,

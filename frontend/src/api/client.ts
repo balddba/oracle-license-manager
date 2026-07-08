@@ -33,20 +33,11 @@ export function formatHostLicenseType(licenseType: HostLicenseType): string {
 }
 export type LicenseMetric =
   | "processor"
-  | "named_user_plus"
-  | "named_user"
-  | "socket"
-  | "concurrent_user"
-  | "application_user"
-  | "ocpu"
-  | "other";
+  | "named_user_plus";
 
-export const PROCESSOR_METRICS: LicenseMetric[] = ["processor", "socket", "ocpu"];
+export const PROCESSOR_METRICS: LicenseMetric[] = ["processor"];
 export const NAMED_USER_METRICS: LicenseMetric[] = [
   "named_user_plus",
-  "named_user",
-  "concurrent_user",
-  "application_user",
 ];
 export type CpuProfileSource = "manual" | "ssh_probe";
 
@@ -66,6 +57,7 @@ export interface License {
 export interface Product {
   id: string;
   agreement_id: string;
+  product_id: string;
   product_name: string;
   option_name: string | null;
   metric: LicenseMetric;
@@ -117,6 +109,7 @@ export interface HostListItem extends Host {
 export interface HostProduct {
   id: string;
   host_id: string;
+  product_id: string;
   product_name: string;
   option_name: string | null;
   license_type: HostLicenseType;
@@ -376,8 +369,8 @@ export const api = {
   assignHostProduct: (
     hostId: string,
     body: {
-      product_name: string;
-      option_name?: string | null;
+      product_id: string;
+      notes?: string | null;
     },
   ) =>
     request<HostProduct>(`/api/v1/hosts/${hostId}/entitlements`, {

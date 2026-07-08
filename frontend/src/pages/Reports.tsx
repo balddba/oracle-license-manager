@@ -11,6 +11,7 @@ import {
   type ProductLicenseSummary,
 } from "../api/client";
 import { ErrorAlert } from "../components/ErrorAlert";
+import { ReportCharts } from "../components/ReportCharts";
 import { TablePageSkeleton } from "../components/PageSkeleton";
 import { formatLicenseMetric } from "../lib/licenseMetrics";
 
@@ -280,6 +281,8 @@ export function Reports() {
           </Card>
         </div>
       </section>
+
+      <ReportCharts productCompliance={data.product_compliance} />
 
       <section className="space-y-3">
         <h3 className="text-lg font-medium">Contracts and entitlements</h3>

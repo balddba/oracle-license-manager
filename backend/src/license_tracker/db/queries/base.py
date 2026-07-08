@@ -385,15 +385,13 @@ class Database(ABC):
     @abstractmethod
     async def product_exists_in_pool(
         self,
-        product_name: str,
-        option_name: str,
+        product_id: uuid.UUID,
         metrics: Sequence[LicenseMetric],
     ) -> bool:
         """Return whether a product exists in the pool for the given metrics.
 
         Args:
-            product_name (str): Product name.
-            option_name (str): Normalized option name.
+            product_id (uuid.UUID): Product catalog ID.
             metrics (Sequence[LicenseMetric]): Allowed metrics.
 
         Returns:
@@ -433,15 +431,13 @@ class Database(ABC):
     async def find_host_entitlement(
         self,
         host_id: uuid.UUID,
-        product_name: str,
-        option_name: str,
+        product_id: uuid.UUID,
     ) -> HostEntitlement | None:
-        """Find an assignment by host and product identity.
+        """Find an assignment by host and product ID.
 
         Args:
             host_id (uuid.UUID): Host primary key.
-            product_name (str): Product name.
-            option_name (str): Normalized option name.
+            product_id (uuid.UUID): Product catalog ID.
 
         Returns:
             HostEntitlement | None: Assignment if found.
@@ -453,7 +449,6 @@ class Database(ABC):
         host_id: uuid.UUID,
         data: HostProductAssign,
         metric: LicenseMetric,
-        option_name: str,
     ) -> HostEntitlement:
         """Create a host product assignment.
 
@@ -461,7 +456,6 @@ class Database(ABC):
             host_id (uuid.UUID): Host primary key.
             data (HostProductAssign): Assignment payload.
             metric (LicenseMetric): Metric derived from host license type.
-            option_name (str): Normalized option name.
 
         Returns:
             HostEntitlement: Created assignment row.
@@ -759,10 +753,10 @@ class Database(ABC):
 
     @abstractmethod
     async def count_products(self) -> int:
-        """Return the number of product entitlements.
+        """Return the number of distinct licensed catalog products.
 
         Returns:
-            int: Product entitlement count.
+            int: Distinct product_id count across all entitlements.
         """
 
     @abstractmethod

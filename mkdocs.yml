@@ -1,5 +1,10 @@
 site_name: Oracle License Tracker
+site_url: https://oracle-license-manager.example.com
 site_description: Track Oracle license agreements, product entitlements, and host CPU inventory.
+
+plugins:
+  - search
+  - social
 
 theme:
   name: material

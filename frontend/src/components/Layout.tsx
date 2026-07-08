@@ -50,7 +50,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {resolvedTheme === "dark" ? (
                 <Sun className="h-4 w-4 text-amber-400" />
               ) : (
-                <Moon className="h-4 w-4 text-indigo-400" />
+                <Moon className="h-4 w-4 text-accent" />
               )}
             </button>
           </div>

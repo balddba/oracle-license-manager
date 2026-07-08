@@ -38,7 +38,7 @@ class SqliteConfig(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    path: str = "data/license_tracker.db"
+    path: str = "data/db/license_tracker.db"
 
 
 class SshConfig(BaseModel):

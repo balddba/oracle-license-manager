@@ -7,39 +7,9 @@ export const LICENSE_METRIC_OPTIONS: { value: LicenseMetric; label: string; grou
     group: "Core-based licensing",
   },
   {
-    value: "socket",
-    label: "Socket",
-    group: "Core-based licensing",
-  },
-  {
-    value: "ocpu",
-    label: "OCPU (cloud)",
-    group: "Core-based licensing",
-  },
-  {
     value: "named_user_plus",
     label: "Named User Plus (NUP)",
     group: "Named-user licensing",
-  },
-  {
-    value: "named_user",
-    label: "Named User",
-    group: "Named-user licensing",
-  },
-  {
-    value: "concurrent_user",
-    label: "Concurrent User",
-    group: "Named-user licensing",
-  },
-  {
-    value: "application_user",
-    label: "Application User",
-    group: "Named-user licensing",
-  },
-  {
-    value: "other",
-    label: "Other",
-    group: "Other",
   },
 ];
 
@@ -54,17 +24,12 @@ export function formatLicenseMetric(metric: LicenseMetric): string {
 
 /** Return whether a metric is core-based processor licensing. */
 export function isProcessorBasedMetric(metric: LicenseMetric): boolean {
-  return metric === "processor" || metric === "socket" || metric === "ocpu";
+  return metric === "processor";
 }
 
 /** Return whether a metric is named-user licensing. */
 export function isNamedUserMetric(metric: LicenseMetric): boolean {
-  return (
-    metric === "named_user_plus" ||
-    metric === "named_user" ||
-    metric === "concurrent_user" ||
-    metric === "application_user"
-  );
+  return metric === "named_user_plus";
 }
 
 /** Summarize entitlements for a CSI list row. */

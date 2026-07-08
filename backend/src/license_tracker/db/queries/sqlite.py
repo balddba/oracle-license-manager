@@ -439,9 +439,11 @@ class SqliteDatabase(Database):
         """
         rows = await self._fetchall(
             """
-            SELECT * FROM product_entitlements
-            WHERE agreement_id = :agreement_id
-            ORDER BY product_name
+            SELECT pe.*, cp.product_name, cp.option_name
+            FROM product_entitlements pe
+            JOIN catalog_products cp ON pe.product_id = cp.id
+            WHERE pe.agreement_id = :agreement_id
+            ORDER BY cp.product_name, cp.option_name
             """,
             {"agreement_id": license_id},
         )
@@ -455,8 +457,10 @@ class SqliteDatabase(Database):
         """
         rows = await self._fetchall(
             """
-            SELECT * FROM product_entitlements
-            ORDER BY product_name, option_name, metric
+            SELECT pe.*, cp.product_name, cp.option_name
+            FROM product_entitlements pe
+            JOIN catalog_products cp ON pe.product_id = cp.id
+            ORDER BY cp.product_name, cp.option_name, pe.metric
             """
         )
         return [map_product(row) for row in rows]
@@ -471,7 +475,12 @@ class SqliteDatabase(Database):
             ProductEntitlement | None: Entitlement if found.
         """
         row = await self._fetchone(
-            "SELECT * FROM product_entitlements WHERE id = :id",
+            """
+            SELECT pe.*, cp.product_name, cp.option_name
+            FROM product_entitlements pe
+            JOIN catalog_products cp ON pe.product_id = cp.id
+            WHERE pe.id = :id
+            """,
             {"id": product_id},
         )
         return map_product(row) if row is not None else None
@@ -494,16 +503,18 @@ class SqliteDatabase(Database):
         await self._execute(
             """
             INSERT INTO product_entitlements (
-                id, agreement_id, product_name, option_name, metric, quantity,
+                id, agreement_id, product_id, metric, quantity,
                 notes, created_at, updated_at
             ) VALUES (
-                :id, :agreement_id, :product_name, :option_name, :metric, :quantity,
+                :id, :agreement_id, :product_id, :metric, :quantity,
                 :notes, :created_at, :updated_at
             )
             """,
             product.model_dump(),
         )
-        return product
+        result = await self.get_product(product.id)
+        assert result is not None
+        return result
 
     async def update_product(
         self,
@@ -527,8 +538,7 @@ class SqliteDatabase(Database):
         await self._execute(
             """
             UPDATE product_entitlements SET
-                product_name = :product_name,
-                option_name = :option_name,
+                product_id = :product_id,
                 metric = :metric,
                 quantity = :quantity,
                 notes = :notes,
@@ -537,7 +547,7 @@ class SqliteDatabase(Database):
             """,
             updated.model_dump(),
         )
-        return updated
+        return await self.get_product(product_id)
 
     async def delete_product(self, product_id: uuid.UUID) -> bool:
         """Delete a product entitlement.
@@ -556,15 +566,13 @@ class SqliteDatabase(Database):
 
     async def product_exists_in_pool(
         self,
-        product_name: str,
-        option_name: str,
+        product_id: uuid.UUID,
         metrics: Sequence[LicenseMetric],
     ) -> bool:
         """Return whether a product exists in the pool for the given metrics.
 
         Args:
-            product_name (str): Product name.
-            option_name (str): Normalized option name.
+            product_id (uuid.UUID): Product catalog ID.
             metrics (Sequence[LicenseMetric]): Allowed metrics.
 
         Returns:
@@ -573,19 +581,15 @@ class SqliteDatabase(Database):
         if not metrics:
             return False
         clause, params = self._in_clause("metric", list(metrics), "metric")
-        params["product_name"] = product_name
+        params["product_id"] = product_id
         rows = await self._fetchall(
             f"""
-            SELECT option_name FROM product_entitlements
-            WHERE product_name = :product_name AND {clause}
+            SELECT id FROM product_entitlements
+            WHERE product_id = :product_id AND {clause}
             """,
             params,
         )
-        for row in rows:
-            stored = row.get("option_name") or row.get("OPTION_NAME") or ""
-            if (stored or "") == option_name:
-                return True
-        return False
+        return len(rows) > 0
 
     # --- host entitlements ---
 
@@ -600,9 +604,11 @@ class SqliteDatabase(Database):
         """
         rows = await self._fetchall(
             """
-            SELECT * FROM host_entitlements
-            WHERE host_id = :host_id
-            ORDER BY product_name, option_name
+            SELECT he.*, cp.product_name, cp.option_name
+            FROM host_entitlements he
+            JOIN catalog_products cp ON he.product_id = cp.id
+            WHERE he.host_id = :host_id
+            ORDER BY cp.product_name, cp.option_name
             """,
             {"host_id": host_id},
         )
@@ -624,8 +630,10 @@ class SqliteDatabase(Database):
         """
         row = await self._fetchone(
             """
-            SELECT * FROM host_entitlements
-            WHERE host_id = :host_id AND id = :id
+            SELECT he.*, cp.product_name, cp.option_name
+            FROM host_entitlements he
+            JOIN catalog_products cp ON he.product_id = cp.id
+            WHERE he.host_id = :host_id AND he.id = :id
             """,
             {"host_id": host_id, "id": assignment_id},
         )
@@ -634,30 +642,27 @@ class SqliteDatabase(Database):
     async def find_host_entitlement(
         self,
         host_id: uuid.UUID,
-        product_name: str,
-        option_name: str,
+        product_id: uuid.UUID,
     ) -> HostEntitlement | None:
-        """Find an assignment by host and product identity.
+        """Find an assignment by host and product ID.
 
         Args:
             host_id (uuid.UUID): Host primary key.
-            product_name (str): Product name.
-            option_name (str): Normalized option name.
+            product_id (uuid.UUID): Product catalog ID.
 
         Returns:
             HostEntitlement | None: Assignment if found.
         """
         row = await self._fetchone(
             """
-            SELECT * FROM host_entitlements
-            WHERE host_id = :host_id
-              AND product_name = :product_name
-              AND option_name = :option_name
+            SELECT he.*, cp.product_name, cp.option_name
+            FROM host_entitlements he
+            JOIN catalog_products cp ON he.product_id = cp.id
+            WHERE he.host_id = :host_id AND he.product_id = :product_id
             """,
             {
                 "host_id": host_id,
-                "product_name": product_name,
-                "option_name": option_name,
+                "product_id": product_id,
             },
         )
         return map_host_entitlement(row) if row is not None else None
@@ -667,7 +672,6 @@ class SqliteDatabase(Database):
         host_id: uuid.UUID,
         data: HostProductAssign,
         metric: LicenseMetric,
-        option_name: str,
     ) -> HostEntitlement:
         """Create a host product assignment.
 
@@ -675,31 +679,31 @@ class SqliteDatabase(Database):
             host_id (uuid.UUID): Host primary key.
             data (HostProductAssign): Assignment payload.
             metric (LicenseMetric): Metric derived from host license type.
-            option_name (str): Normalized option name.
 
         Returns:
             HostEntitlement: Created assignment row.
         """
         row = HostEntitlement(
             host_id=host_id,
-            product_name=data.product_name,
-            option_name=option_name,
+            product_id=data.product_id,
             metric=metric,
             notes=data.notes,
         )
         await self._execute(
             """
             INSERT INTO host_entitlements (
-                id, host_id, product_name, option_name, metric, notes,
+                id, host_id, product_id, metric, notes,
                 created_at, updated_at
             ) VALUES (
-                :id, :host_id, :product_name, :option_name, :metric, :notes,
+                :id, :host_id, :product_id, :metric, :notes,
                 :created_at, :updated_at
             )
             """,
             row.model_dump(),
         )
-        return row
+        result = await self.get_host_entitlement(host_id, row.id)
+        assert result is not None
+        return result
 
     async def delete_host_entitlement(
         self,
@@ -764,8 +768,10 @@ class SqliteDatabase(Database):
         params["product_name"] = product_name
         rows = await self._fetchall(
             f"""
-            SELECT * FROM host_entitlements
-            WHERE product_name = :product_name AND {clause}
+            SELECT he.*, cp.product_name, cp.option_name
+            FROM host_entitlements he
+            JOIN catalog_products cp ON he.product_id = cp.id
+            WHERE cp.product_name = :product_name AND {clause}
             """,
             params,
         )
@@ -1205,12 +1211,14 @@ class SqliteDatabase(Database):
         return int((row or {}).get("cnt") or (row or {}).get("CNT") or 0)
 
     async def count_products(self) -> int:
-        """Return the number of product entitlements.
+        """Return the number of distinct licensed catalog products.
 
         Returns:
-            int: Product entitlement count.
+            int: Distinct product_id count across all entitlements.
         """
-        row = await self._fetchone("SELECT COUNT(*) AS cnt FROM product_entitlements")
+        row = await self._fetchone(
+            "SELECT COUNT(DISTINCT product_id) AS cnt FROM product_entitlements"
+        )
         return int((row or {}).get("cnt") or (row or {}).get("CNT") or 0)
 
     async def count_hosts(self) -> int:

@@ -12,6 +12,33 @@ from httpx import AsyncClient
 from license_tracker.db.session import get_database
 
 
+async def _get_catalog_product_id(client: AsyncClient, name: str, option: str | None = None) -> str:
+    """Helper to retrieve a catalog product ID by name and option."""
+    resp = await client.get("/api/v1/catalog/products")
+    assert resp.status_code == 200
+    products = resp.json()
+    for product in products:
+        if product["product_name"].lower() == name.lower():
+            p_opt = product.get("option_name") or ""
+            o_opt = option or ""
+            if p_opt.lower() == o_opt.lower():
+                return product["id"]
+    # Create custom catalog product if not found
+    create_resp = await client.post(
+        "/api/v1/catalog/products",
+        json={
+            "price_list_id": "technology-price-list-070617",
+            "category": "Custom",
+            "product_name": name,
+            "option_name": option,
+            "supports_nup": True,
+            "supports_processor": True,
+        },
+    )
+    assert create_resp.status_code == 201
+    return create_resp.json()["id"]
+
+
 @pytest.mark.asyncio
 async def test_health(client: AsyncClient) -> None:
     """Health endpoint returns ok."""
@@ -68,11 +95,13 @@ async def test_entitlement_under_agreement(client: AsyncClient) -> None:
         )
     ).json()
     agreement_id = agreement["id"]
+    p_id = await _get_catalog_product_id(
+        client, "Database Enterprise Edition", "Enterprise Edition"
+    )
     ent_resp = await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": "Database Enterprise Edition",
-            "option_name": "Enterprise Edition",
+            "product_id": p_id,
             "metric": "processor",
             "quantity": 8,
         },
@@ -155,18 +184,20 @@ async def test_agreement_processor_compliance(client: AsyncClient) -> None:
     ).json()
     agreement_id = agreement["id"]
 
+    p_id_db = await _get_catalog_product_id(client, "Database Enterprise Edition")
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": "Database Enterprise Edition",
+            "product_id": p_id_db,
             "metric": "processor",
             "quantity": 20,
         },
     )
+    p_id_wl = await _get_catalog_product_id(client, "WebLogic Server")
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": "WebLogic Server",
+            "product_id": p_id_wl,
             "metric": "named_user_plus",
             "quantity": 100,
         },
@@ -252,10 +283,16 @@ async def test_host_product_assignment(client: AsyncClient) -> None:
     ).json()
     agreement_id = agreement["id"]
 
+    p_id_db = await _get_catalog_product_id(client, "Oracle Database Enterprise Edition")
+    p_id_tuning = await _get_catalog_product_id(
+        client, "Oracle Database Enterprise Edition", "Tuning Pack"
+    )
+    p_id_wl = await _get_catalog_product_id(client, "WebLogic Server")
+
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": "Oracle Database Enterprise Edition",
+            "product_id": p_id_db,
             "metric": "processor",
             "quantity": 8,
         },
@@ -263,7 +300,7 @@ async def test_host_product_assignment(client: AsyncClient) -> None:
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": "WebLogic Server",
+            "product_id": p_id_wl,
             "metric": "processor",
             "quantity": 4,
         },
@@ -283,7 +320,7 @@ async def test_host_product_assignment(client: AsyncClient) -> None:
 
     assign_resp = await client.post(
         f"/api/v1/hosts/{host_id}/entitlements",
-        json={"product_name": "Oracle Database Enterprise Edition"},
+        json={"product_id": p_id_db},
     )
     assert assign_resp.status_code == 201
     assert assign_resp.json()["product_name"] == "Oracle Database Enterprise Edition"
@@ -296,23 +333,20 @@ async def test_host_product_assignment(client: AsyncClient) -> None:
 
     duplicate_resp = await client.post(
         f"/api/v1/hosts/{host_id}/entitlements",
-        json={"product_name": "Oracle Database Enterprise Edition"},
+        json={"product_id": p_id_db},
     )
     assert duplicate_resp.status_code == 400
 
     unassigned = await client.post(
         f"/api/v1/hosts/{host_id}/entitlements",
-        json={
-            "product_name": "Oracle Database Enterprise Edition",
-            "option_name": "Tuning Pack",
-        },
+        json={"product_id": p_id_tuning},
     )
     assert unassigned.status_code == 201
     assert unassigned.json()["option_name"] == "Tuning Pack"
 
     await client.post(
         f"/api/v1/hosts/{host_id}/entitlements",
-        json={"product_name": "WebLogic Server"},
+        json={"product_id": p_id_wl},
     )
     assert len((await client.get(f"/api/v1/hosts/{host_id}/entitlements")).json()) == 3
 
@@ -332,10 +366,11 @@ async def test_host_product_nup_assignment(client: AsyncClient) -> None:
             json={"csi": "CSI-NUP", "customer_name": "NUP Co"},
         )
     ).json()
+    p_id = await _get_catalog_product_id(client, "Oracle Database Enterprise Edition")
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
         json={
-            "product_name": "Oracle Database Enterprise Edition",
+            "product_id": p_id,
             "metric": "named_user_plus",
             "quantity": 50,
         },
@@ -343,7 +378,7 @@ async def test_host_product_nup_assignment(client: AsyncClient) -> None:
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
         json={
-            "product_name": "Oracle Database Enterprise Edition",
+            "product_id": p_id,
             "metric": "processor",
             "quantity": 8,
         },
@@ -358,7 +393,7 @@ async def test_host_product_nup_assignment(client: AsyncClient) -> None:
     assert nup_host["license_type"] == "nup"
     assign_nup = await client.post(
         f"/api/v1/hosts/{nup_host['id']}/entitlements",
-        json={"product_name": "Oracle Database Enterprise Edition"},
+        json={"product_id": p_id},
     )
     assert assign_nup.status_code == 201
     assert assign_nup.json()["license_type"] == "nup"
@@ -372,7 +407,7 @@ async def test_host_product_nup_assignment(client: AsyncClient) -> None:
     ).json()
     assign_cpu = await client.post(
         f"/api/v1/hosts/{cpu_host['id']}/entitlements",
-        json={"product_name": "Oracle Database Enterprise Edition"},
+        json={"product_id": p_id},
     )
     assert assign_cpu.status_code == 201
     assert assign_cpu.json()["license_type"] == "cpu"
@@ -401,11 +436,13 @@ async def test_host_license_type_switch_without_pool_for_target_type(
             json={"csi": "CSI-SHORT", "customer_name": "Shortfall Co"},
         )
     ).json()
+    p_id = await _get_catalog_product_id(
+        client, "Oracle Database Enterprise Edition", "Tuning Pack"
+    )
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
         json={
-            "product_name": "Oracle Database Enterprise Edition",
-            "option_name": "Tuning Pack",
+            "product_id": p_id,
             "metric": "processor",
             "quantity": 4,
         },
@@ -419,10 +456,7 @@ async def test_host_license_type_switch_without_pool_for_target_type(
     ).json()
     assign = await client.post(
         f"/api/v1/hosts/{host['id']}/entitlements",
-        json={
-            "product_name": "Oracle Database Enterprise Edition",
-            "option_name": "Tuning Pack",
-        },
+        json={"product_id": p_id},
     )
     assert assign.status_code == 201
 
@@ -449,10 +483,11 @@ async def test_host_licenses_required_label(client: AsyncClient) -> None:
             json={"csi": "CSI-LABEL", "customer_name": "Label Co"},
         )
     ).json()
+    p_id = await _get_catalog_product_id(client, "Database Enterprise Edition")
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
         json={
-            "product_name": "Database Enterprise Edition",
+            "product_id": p_id,
             "metric": "processor",
             "quantity": 20,
         },
@@ -460,7 +495,7 @@ async def test_host_licenses_required_label(client: AsyncClient) -> None:
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
         json={
-            "product_name": "Database Enterprise Edition",
+            "product_id": p_id,
             "metric": "named_user_plus",
             "quantity": 50,
         },
@@ -517,6 +552,7 @@ async def test_host_licenses_required_label(client: AsyncClient) -> None:
 async def test_pooled_products_across_multiple_csis(client: AsyncClient) -> None:
     """Three CSIs can pool licenses that cover two servers."""
     product_name = "Database Enterprise Edition"
+    p_id = await _get_catalog_product_id(client, product_name)
     for csi in ("CSI-1", "CSI-2", "CSI-3"):
         agreement = (
             await client.post(
@@ -526,7 +562,7 @@ async def test_pooled_products_across_multiple_csis(client: AsyncClient) -> None
         ).json()
         await client.post(
             f"/api/v1/agreements/{agreement['id']}/entitlements",
-            json={"product_name": product_name, "metric": "processor", "quantity": 10},
+            json={"product_id": p_id, "metric": "processor", "quantity": 10},
         )
 
     pooled = await client.get("/api/v1/hosts/pooled-products")
@@ -539,7 +575,7 @@ async def test_pooled_products_across_multiple_csis(client: AsyncClient) -> None
         host = (await client.post("/api/v1/hosts", json={"hostname": hostname})).json()
         assign = await client.post(
             f"/api/v1/hosts/{host['id']}/entitlements",
-            json={"product_name": product_name},
+            json={"product_id": p_id},
         )
         assert assign.status_code == 201
         await client.post(
@@ -609,17 +645,18 @@ async def test_dashboard_summary(client: AsyncClient) -> None:
     ).json()
 
     product_name = "Database Enterprise Edition"
+    p_id = await _get_catalog_product_id(client, product_name)
     await client.post(
         f"/api/v1/agreements/{agreement_a['id']}/entitlements",
-        json={"product_name": product_name, "metric": "processor", "quantity": 10},
+        json={"product_id": p_id, "metric": "processor", "quantity": 10},
     )
     await client.post(
         f"/api/v1/agreements/{agreement_b['id']}/entitlements",
-        json={"product_name": product_name, "metric": "processor", "quantity": 5},
+        json={"product_id": p_id, "metric": "processor", "quantity": 5},
     )
     await client.post(
         f"/api/v1/agreements/{agreement_a['id']}/entitlements",
-        json={"product_name": product_name, "metric": "named_user_plus", "quantity": 50},
+        json={"product_id": p_id, "metric": "named_user_plus", "quantity": 50},
     )
 
     host = (
@@ -630,7 +667,7 @@ async def test_dashboard_summary(client: AsyncClient) -> None:
     ).json()
     await client.post(
         f"/api/v1/hosts/{host['id']}/entitlements",
-        json={"product_name": product_name},
+        json={"product_id": p_id},
     )
     await client.post(
         f"/api/v1/hosts/{host['id']}/cpu-profile",
@@ -646,6 +683,7 @@ async def test_dashboard_summary(client: AsyncClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["agreement_count"] >= 2
+    assert body["product_count"] == 1
     inventory_row = next(
         row for row in body["license_inventory"] if row["product_name"] == product_name
     )
@@ -666,9 +704,10 @@ async def test_full_report(client: AsyncClient) -> None:
         )
     ).json()
     product_name = "Database Enterprise Edition"
+    p_id = await _get_catalog_product_id(client, product_name)
     await client.post(
         f"/api/v1/agreements/{agreement['id']}/entitlements",
-        json={"product_name": product_name, "metric": "processor", "quantity": 12},
+        json={"product_id": p_id, "metric": "processor", "quantity": 12},
     )
     host = (
         await client.post(
@@ -678,7 +717,7 @@ async def test_full_report(client: AsyncClient) -> None:
     ).json()
     await client.post(
         f"/api/v1/hosts/{host['id']}/entitlements",
-        json={"product_name": product_name},
+        json={"product_id": p_id},
     )
     await client.post(
         f"/api/v1/hosts/{host['id']}/cpu-profile",
@@ -744,6 +783,7 @@ async def test_global_exception_handler(client: AsyncClient) -> None:
 async def test_nup_compliance_balance(client: AsyncClient) -> None:
     """Verify that Named User Plus (NUP) compliance balance is calculated correctly."""
     product_name = "Oracle Database Standard Edition 2"
+    p_id = await _get_catalog_product_id(client, product_name)
 
     # 1. Create CSI agreement with 50 NUP licenses
     agreement = (
@@ -757,7 +797,7 @@ async def test_nup_compliance_balance(client: AsyncClient) -> None:
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": product_name,
+            "product_id": p_id,
             "metric": "named_user_plus",
             "quantity": 50,
         },
@@ -779,7 +819,7 @@ async def test_nup_compliance_balance(client: AsyncClient) -> None:
     # Assign product as NUP
     await client.post(
         f"/api/v1/hosts/{host_id}/entitlements",
-        json={"product_name": product_name},
+        json={"product_id": p_id},
     )
 
     # Insert CPU profile manually to compute default core licensing requirements,
@@ -816,7 +856,7 @@ async def test_nup_compliance_balance(client: AsyncClient) -> None:
     await client.post(
         f"/api/v1/agreements/{agreement_id}/entitlements",
         json={
-            "product_name": product_name,
+            "product_id": p_id,
             "metric": "named_user_plus",
             "quantity": 300,
         },

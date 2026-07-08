@@ -1,0 +1,9 @@
+{
+  "name": "license-tracker-echarts-renderer",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "canvas": "^3.2.1",
+    "echarts": "^5.6.0"
+  }
+}

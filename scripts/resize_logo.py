@@ -48,13 +48,19 @@ class LogoResizerConfig(BaseModel):
     """Configuration for the logo resizer process.
 
     Attributes:
-        source_path (Path): Path to the high-resolution source logo.
+        source_light_path (Path): Path to the light-mode high-resolution source logo.
+        source_dark_path (Path): Path to the dark-mode high-resolution source logo.
         specs (list[ResizedLogoSpec]): List of image specifications to generate.
     """
 
     model_config = {"extra": "forbid"}
 
-    source_path: Path = Field(description="Path to the source logo file.")
+    source_light_path: Path = Field(
+        description="Path to the light-mode source logo file."
+    )
+    source_dark_path: Path = Field(
+        description="Path to the dark-mode source logo file."
+    )
     specs: list[ResizedLogoSpec] = Field(description="List of target specifications.")
 
 
@@ -69,7 +75,7 @@ class LogoResizer:
         """Initialize the resizer with configuration.
 
         Args:
-            config (LogoResizerConfig): The configuration containing source path and specs.
+            config (LogoResizerConfig): The configuration containing source paths and specs.
         """
         self.config = config
 
@@ -230,12 +236,18 @@ class LogoResizer:
         spec.output_dir.mkdir(parents=True, exist_ok=True)
         dest_path = spec.output_dir / spec.filename
 
-        with Image.open(self.config.source_path) as raw_img:
+        source_path = (
+            self.config.source_dark_path
+            if spec.is_dark_mode
+            else self.config.source_light_path
+        )
+
+        with Image.open(source_path) as raw_img:
             # Clean background transparency
             img = self._remove_checkerboard_background(raw_img)
 
-            # Apply dark mode conversion if specified
-            if spec.is_dark_mode:
+            # Apply dark mode conversion if specified and using the light source as fallback
+            if spec.is_dark_mode and source_path == self.config.source_light_path:
                 img = self._convert_for_dark_mode(img)
 
             if spec.is_square:
@@ -258,7 +270,8 @@ class LogoResizer:
     def run(self) -> None:
         """Execute the resizing process for all specifications in the configuration."""
         logger.info(
-            f"Starting logo resizing process for source: {self.config.source_path}"
+            f"Starting logo resizing process for sources: "
+            f"{self.config.source_light_path} and {self.config.source_dark_path}"
         )
         for spec in self.config.specs:
             self.process_spec(spec)
@@ -268,16 +281,22 @@ class LogoResizer:
 def main() -> None:
     """Main entry point to execute the logo resizing script."""
     root_dir = Path(__file__).resolve().parent.parent
-    source_logo = root_dir / "frontend/src/assets/logo_original.png"
+    source_light = root_dir / "frontend/src/assets/logo_light_original.png"
+    source_dark = root_dir / "frontend/src/assets/logo_dark_original.png"
     assets_dir = root_dir / "frontend/src/assets"
     public_dir = root_dir / "frontend/public"
 
-    if not source_logo.exists():
-        logger.error(f"Source logo not found at: {source_logo}")
+    if not source_light.exists():
+        logger.error(f"Source light logo not found at: {source_light}")
+        sys.exit(1)
+
+    if not source_dark.exists():
+        logger.error(f"Source dark logo not found at: {source_dark}")
         sys.exit(1)
 
     config = LogoResizerConfig(
-        source_path=source_logo,
+        source_light_path=source_light,
+        source_dark_path=source_dark,
         specs=[
             # Light Mode Logos
             ResizedLogoSpec(

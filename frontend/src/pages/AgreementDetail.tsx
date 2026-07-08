@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Card, toast } from "@heroui/react";
 import { CatalogProductField } from "../components/CatalogProductField";
@@ -17,7 +17,7 @@ import {
   type LicenseStatus,
   type Product,
 } from "../api/client";
-import { formatCatalogLabel, formatCatalogPrices, DEFAULT_PRICE_LIST_ID } from "../lib/catalog";
+import { formatCatalogLabel, formatCatalogPrices } from "../lib/catalog";
 import { formatLicenseMetric, LICENSE_METRIC_OPTIONS } from "../lib/licenseMetrics";
 
 const emptyProductForm = {
@@ -64,6 +64,7 @@ export function AgreementDetail() {
   const [catalogInput, setCatalogInput] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
+  const [selectedCatalogProduct, setSelectedCatalogProduct] = useState<CatalogProduct | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setCatalogSearch(catalogInput), 300);
@@ -102,13 +103,12 @@ export function AgreementDetail() {
         search: catalogSearch || undefined,
         limit: 200,
       }),
+    placeholderData: keepPreviousData,
   });
-
-  const selectedCatalogProduct =
-    catalogProducts?.find((product) => product.id === selectedCatalogId) ?? null;
 
   const applyCatalogProduct = (product: CatalogProduct) => {
     setSelectedCatalogId(product.id);
+    setSelectedCatalogProduct(product);
     setForm((current) => ({
       ...current,
       product_name: product.product_name,
@@ -161,29 +161,10 @@ export function AgreementDetail() {
     },
   });
 
-  const createCatalogProduct = useMutation({
-    mutationFn: (productName: string) =>
-      api.createCatalogProduct({
-        price_list_id: DEFAULT_PRICE_LIST_ID,
-        category: "Custom",
-        product_name: productName,
-      }),
-    onSuccess: (product) => {
-      applyCatalogProduct(product);
-      setCatalogInput(formatCatalogLabel(product));
-      void queryClient.invalidateQueries({ queryKey: ["catalog-products"] });
-      toast.success("Product added to catalog");
-    },
-    onError: (mutationError) => {
-      toast.danger(formatApiError(mutationError, "Failed to add product to catalog."));
-    },
-  });
-
   const saveProduct = useMutation({
     mutationFn: () => {
       const payload = {
-        product_name: form.product_name,
-        option_name: form.option_name || null,
+        product_id: selectedCatalogId,
         metric: form.metric,
         quantity: Number(form.quantity),
         notes: form.notes || null,
@@ -197,6 +178,7 @@ export function AgreementDetail() {
       setForm(emptyProductForm);
       setEditingId(null);
       setSelectedCatalogId("");
+      setSelectedCatalogProduct(null);
       setCatalogInput("");
       invalidate();
       toast.success(editingId ? "Entitlement updated" : "Entitlement added");
@@ -224,7 +206,20 @@ export function AgreementDetail() {
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     setCatalogInput(product.product_name);
-    setSelectedCatalogId("");
+    setSelectedCatalogId(product.product_id);
+    setSelectedCatalogProduct({
+      id: product.product_id,
+      price_list_id: "",
+      category: "",
+      product_name: product.product_name,
+      option_name: product.option_name,
+      list_price_nup_usd: null,
+      list_price_nup_support_usd: null,
+      list_price_processor_usd: null,
+      list_price_processor_support_usd: null,
+      supports_nup: product.metric !== "processor",
+      supports_processor: product.metric === "processor",
+    });
     setForm({
       product_name: product.product_name,
       option_name: product.option_name ?? "",
@@ -238,6 +233,7 @@ export function AgreementDetail() {
     setEditingId(null);
     setForm(emptyProductForm);
     setSelectedCatalogId("");
+    setSelectedCatalogProduct(null);
     setCatalogInput("");
   };
 
@@ -411,14 +407,20 @@ export function AgreementDetail() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <CatalogProductField
+              key={editingId ? `edit-${editingId}` : "new"}
               products={catalogProducts ?? []}
               selectedId={selectedCatalogId}
+              selectedProduct={selectedCatalogProduct}
               inputValue={catalogInput}
               onInputChange={(value) => {
                 setCatalogInput(value);
                 if (selectedCatalogId) {
-                  setSelectedCatalogId("");
-                  setForm((current) => ({ ...current, option_name: "" }));
+                  const expectedLabel = selectedCatalogProduct ? formatCatalogLabel(selectedCatalogProduct) : "";
+                  if (value !== expectedLabel) {
+                    setSelectedCatalogId("");
+                    setSelectedCatalogProduct(null);
+                    setForm((current) => ({ ...current, option_name: "" }));
+                  }
                 }
               }}
               onProductNameChange={(productName) => {
@@ -430,11 +432,10 @@ export function AgreementDetail() {
                   setCatalogInput(formatCatalogLabel(product));
                 } else {
                   setSelectedCatalogId("");
+                  setSelectedCatalogProduct(null);
                   setForm((current) => ({ ...current, option_name: "" }));
                 }
               }}
-              onCreateProduct={(productName) => createCatalogProduct.mutate(productName)}
-              isCreatingProduct={createCatalogProduct.isPending}
             />
           </div>
           <FormField
@@ -473,7 +474,7 @@ export function AgreementDetail() {
         <div className="flex gap-2">
           <Button
             onPress={() => saveProduct.mutate()}
-            isDisabled={!form.product_name.trim() || saveProduct.isPending}
+            isDisabled={!selectedCatalogId || saveProduct.isPending}
           >
             {editingId ? "Save changes" : "Add product"}
           </Button>

@@ -14,10 +14,28 @@ ENV UV_COMPILE_BYTECODE=1 \
 COPY backend/pyproject.toml /app/backend/
 COPY backend/alembic.ini /app/backend/
 COPY backend/alembic /app/backend/alembic
+COPY backend/scripts/echarts-renderer /app/backend/scripts/echarts-renderer
 COPY backend/src /app/backend/src
 
 WORKDIR /app/backend
-RUN uv sync --no-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        nodejs \
+        npm \
+        libcairo2-dev \
+        libpango1.0-dev \
+        libjpeg-dev \
+        libgif-dev \
+        librsvg2-dev \
+        build-essential \
+        python3-dev \
+    && cd /app/backend/scripts/echarts-renderer && npm ci \
+    && apt-get purge -y build-essential python3-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && uv sync --no-dev
+
+ENV LICENSE_TRACKER_ECHARTS_RENDERER=/app/backend/scripts/echarts-renderer
 
 COPY config /app/config
 COPY data /app/data

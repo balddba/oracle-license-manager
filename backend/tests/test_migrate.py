@@ -183,7 +183,7 @@ def test_partial_legacy_schema_upgrades_through_head(test_settings: Settings) ->
             revision = connection.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar_one()
-        assert revision == "0012_normalize_enum_values"
+        assert revision == "0013_link_to_catalog_product_id"
     finally:
         engine.dispose()
         reset_session_state()
@@ -216,7 +216,7 @@ def test_repair_migration_adds_missing_host_columns(test_settings: Settings) -> 
             revision = connection.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar_one()
-        assert revision == "0012_normalize_enum_values"
+        assert revision == "0013_link_to_catalog_product_id"
     finally:
         verify_engine.dispose()
         reset_session_state()

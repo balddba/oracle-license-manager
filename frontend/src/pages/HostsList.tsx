@@ -91,7 +91,7 @@ export function HostsList() {
             <tr>
               <th className="px-4 py-2">Hostname</th>
               <th className="px-4 py-2">Environment</th>
-              <th className="px-4 py-2">Assigned products</th>
+              <th className="px-4 py-2">Assigned product</th>
               <th className="px-4 py-2">Cores</th>
               <th className="px-4 py-2">Licenses required</th>
             </tr>
@@ -104,53 +104,63 @@ export function HostsList() {
                 </td>
               </tr>
             ) : (
-              data?.map((host) => (
-                <tr key={host.id} className="border-t border-separator">
-                  <td className="px-4 py-2">
-                    <Link className="text-link hover:underline" to={`/hosts/${host.id}`}>
-                      {host.hostname}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-2">{formatHostEnvironment(host.environment)}</td>
-                  <td className="px-4 py-2">
-                    {(host.assigned_products ?? []).length > 0 ? (
-                      <ul className="list-disc space-y-1 pl-4">
-                        {host.assigned_products.map((product) => (
-                          <li key={product}>{product}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      "None assigned"
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    {host.physical_cores != null ? (
-                      host.physical_cores
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    {host.licenses_required_label ? (
-                      <button
-                        type="button"
-                        className="font-medium text-link underline-offset-2 hover:underline"
-                        onClick={() => setSelectedHost(host)}
-                      >
-                        {host.licenses_required_label}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="text-muted underline-offset-2 hover:underline"
-                        onClick={() => setSelectedHost(host)}
-                      >
-                        —
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
+              data?.flatMap((host) => {
+                const products = host.assigned_products ?? [];
+                const displayProducts = products.length > 0 ? products : [null];
+                const rowSpan = displayProducts.length;
+                return displayProducts.map((product, idx) => {
+                  const key = product ? `${host.id}-${product}` : `${host.id}-none`;
+                  return (
+                    <tr key={key} className={idx === 0 ? "border-t border-separator" : ""}>
+                      {idx === 0 && (
+                        <>
+                          <td className="align-top px-4 py-2" rowSpan={rowSpan}>
+                            <Link className="text-link hover:underline" to={`/hosts/${host.id}`}>
+                              {host.hostname}
+                            </Link>
+                          </td>
+                          <td className="align-top px-4 py-2" rowSpan={rowSpan}>
+                            {formatHostEnvironment(host.environment)}
+                          </td>
+                        </>
+                      )}
+                      <td className="px-4 py-2">
+                        {product ?? <span className="text-muted">None assigned</span>}
+                      </td>
+                      {idx === 0 && (
+                        <>
+                          <td className="align-top px-4 py-2" rowSpan={rowSpan}>
+                            {host.physical_cores != null ? (
+                              host.physical_cores
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="align-top px-4 py-2" rowSpan={rowSpan}>
+                            {host.licenses_required_label ? (
+                              <button
+                                type="button"
+                                className="font-medium text-link underline-offset-2 hover:underline"
+                                onClick={() => setSelectedHost(host)}
+                              >
+                                {host.licenses_required_label}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="text-muted underline-offset-2 hover:underline"
+                                onClick={() => setSelectedHost(host)}
+                              >
+                                —
+                              </button>
+                            )}
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  );
+                });
+              })
             )}
           </tbody>
         </table>

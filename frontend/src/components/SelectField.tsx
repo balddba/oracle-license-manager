@@ -1,24 +1,53 @@
-interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+import { Select, Label, ListBox } from "@heroui/react";
+import type { Key } from "react";
+
+interface SelectFieldProps {
   label: string;
+  id?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { value: string; label: string }[];
+  name?: string;
+  disabled?: boolean;
 }
 
-export function SelectField({ label, id, options, ...props }: SelectFieldProps) {
+export function SelectField({ label, id, value, onChange, options, name, disabled }: SelectFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, "-");
+
+  const handleSelectionChange = (key: Key | null) => {
+    if (onChange) {
+      onChange({
+        target: {
+          value: key ? String(key) : "",
+          name,
+        },
+      } as unknown as React.ChangeEvent<HTMLSelectElement>);
+    }
+  };
+
   return (
-    <label htmlFor={fieldId} className="block text-sm">
-      <span className="mb-1 block text-muted">{label}</span>
-      <select
-        id={fieldId}
-        className="w-full rounded-lg border border-border bg-field px-3 py-2 text-sm text-foreground outline-none focus:border-focus focus:ring-2 focus:ring-focus/20"
-        {...props}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <Select
+      id={fieldId}
+      selectedKey={value ?? null}
+      onChange={handleSelectionChange}
+      isDisabled={disabled}
+      fullWidth
+    >
+      <Label className="mb-1 block text-muted">{label}</Label>
+      <Select.Trigger>
+        <Select.Value />
+        <Select.Indicator />
+      </Select.Trigger>
+      <Select.Popover>
+        <ListBox>
+          {options.map((option) => (
+            <ListBox.Item key={option.value} id={option.value} textValue={option.label}>
+              {option.label}
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </Select.Popover>
+    </Select>
   );
 }
+

@@ -26,9 +26,12 @@ class HostEntitlement(BaseModel):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     host_id: uuid.UUID
-    product_name: str
-    option_name: str = ""
+    product_id: uuid.UUID
     metric: LicenseMetric = LicenseMetric.PROCESSOR
     notes: str | None = None
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)
+
+    # Joined fields loaded from catalog_products
+    product_name: str | None = None
+    option_name: str | None = None

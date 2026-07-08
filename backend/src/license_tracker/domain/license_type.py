@@ -7,16 +7,11 @@ from license_tracker.domain.enums import HostLicenseType, LicenseMetric
 _CPU_METRICS = frozenset(
     {
         LicenseMetric.PROCESSOR,
-        LicenseMetric.SOCKET,
-        LicenseMetric.OCPU,
     }
 )
 _NUP_METRICS = frozenset(
     {
         LicenseMetric.NAMED_USER_PLUS,
-        LicenseMetric.NAMED_USER,
-        LicenseMetric.CONCURRENT_USER,
-        LicenseMetric.APPLICATION_USER,
     }
 )
 

@@ -40,10 +40,10 @@ export function Settings() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="p-6 flex flex-col justify-between border border-border/40 bg-gradient-to-br from-surface to-surface/85 shadow-lg relative overflow-hidden group">
           {/* Decorative subtle gradient background ornament */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/15 transition-all duration-500" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-accent/10 rounded-full blur-xl group-hover:bg-accent/15 transition-all duration-500" />
 
           <div className="space-y-3 relative z-10">
-            <div className="inline-flex items-center justify-center p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <div className="inline-flex items-center justify-center p-2.5 rounded-lg bg-accent/10 text-accent">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path
                   strokeLinecap="round"
@@ -132,10 +132,10 @@ export function Settings() {
 
         <Card className="p-6 border border-border/40 bg-gradient-to-br from-surface to-surface/85 shadow-lg relative overflow-hidden group md:col-span-2">
           {/* Decorative subtle gradient background ornament */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/15 transition-all duration-500" />
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-accent/10 rounded-full blur-xl group-hover:bg-accent/15 transition-all duration-500" />
 
           <div className="space-y-4 relative z-10">
-            <div className="inline-flex items-center justify-center p-2.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+            <div className="inline-flex items-center justify-center p-2.5 rounded-lg bg-accent/10 text-accent">
               <Sun className="w-5 h-5 animate-spin-slow" />
             </div>
             <div>
@@ -159,7 +159,7 @@ export function Settings() {
                     onClick={() => setTheme(option.value)}
                     className={`flex flex-col items-center justify-center gap-3 p-4 rounded-xl border transition-all duration-300 cursor-pointer ${
                       isActive
-                        ? "border-indigo-500/80 bg-indigo-500/10 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
+                        ? "border-accent/80 bg-accent/10 shadow-[0_0_12px_color-mix(in_srgb,var(--accent)_20%,transparent)]"
                         : "border-border/30 bg-surface/50 hover:bg-surface-hover/80 hover:border-border/80"
                     }`}
                   >

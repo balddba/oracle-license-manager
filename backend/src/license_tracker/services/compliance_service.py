@@ -20,16 +20,11 @@ from license_tracker.services.license_service import LicenseService
 _CORE_METRICS = frozenset(
     {
         LicenseMetric.PROCESSOR,
-        LicenseMetric.SOCKET,
-        LicenseMetric.OCPU,
     }
 )
 _NAMED_USER_METRICS = frozenset(
     {
         LicenseMetric.NAMED_USER_PLUS,
-        LicenseMetric.NAMED_USER,
-        LicenseMetric.CONCURRENT_USER,
-        LicenseMetric.APPLICATION_USER,
     }
 )
 

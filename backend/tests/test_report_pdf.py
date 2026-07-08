@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import zlib
 from datetime import UTC, date, datetime
 from uuid import uuid4
 
@@ -20,6 +22,30 @@ from license_tracker.models import (
     ProductRead,
 )
 from license_tracker.services.report_pdf import report_to_pdf
+from license_tracker.services.report_pdf_theme import REPORT_TITLE
+
+
+def _pdf_contains_text(pdf_bytes: bytes, text: str) -> bool:
+    """Return whether text appears in a PDF, including compressed content streams.
+
+    Args:
+        pdf_bytes (bytes): Raw PDF file bytes.
+        text (str): Plain text to search for.
+
+    Returns:
+        bool: True when the text is found in the PDF payload.
+    """
+    encoded = text.encode("latin-1", errors="replace")
+    if encoded in pdf_bytes:
+        return True
+    for match in re.finditer(rb"stream\r?\n(.*?)\r?\nendstream", pdf_bytes, re.DOTALL):
+        try:
+            decompressed = zlib.decompress(match.group(1))
+        except zlib.error:
+            continue
+        if encoded in decompressed:
+            return True
+    return False
 
 
 def test_report_to_pdf_includes_report_content() -> None:
@@ -54,6 +80,7 @@ def test_report_to_pdf_includes_report_content() -> None:
                     ProductRead(
                         id=product_id,
                         agreement_id=agreement_id,
+                        product_id=uuid4(),
                         product_name="Database Enterprise Edition",
                         option_name=None,
                         metric=LicenseMetric.PROCESSOR,
@@ -109,6 +136,9 @@ def test_report_to_pdf_includes_report_content() -> None:
     assert pdf_bytes.startswith(b"%PDF")
     assert pdf_bytes.rstrip().endswith(b"%%EOF")
     assert len(pdf_bytes) > 500
+    assert _pdf_contains_text(pdf_bytes, REPORT_TITLE)
+    assert b"Host Environment Distribution" not in pdf_bytes
+    assert b"OS Version by Environment" not in pdf_bytes
 
 
 def test_report_to_pdf_empty_data() -> None:
@@ -134,6 +164,7 @@ def test_report_to_pdf_empty_data() -> None:
     assert pdf_bytes.startswith(b"%PDF")
     assert pdf_bytes.rstrip().endswith(b"%%EOF")
     assert len(pdf_bytes) > 500
+    assert _pdf_contains_text(pdf_bytes, REPORT_TITLE)
 
 
 def test_report_to_pdf_shortfall_colors() -> None:
@@ -167,6 +198,7 @@ def test_report_to_pdf_shortfall_colors() -> None:
                     ProductRead(
                         id=product_id,
                         agreement_id=agreement_id,
+                        product_id=uuid4(),
                         product_name="Database Enterprise Edition",
                         option_name=None,
                         metric=LicenseMetric.PROCESSOR,
@@ -196,3 +228,4 @@ def test_report_to_pdf_shortfall_colors() -> None:
     assert pdf_bytes.startswith(b"%PDF")
     assert pdf_bytes.rstrip().endswith(b"%%EOF")
     assert len(pdf_bytes) > 500
+    assert _pdf_contains_text(pdf_bytes, REPORT_TITLE)

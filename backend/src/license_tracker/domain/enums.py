@@ -18,12 +18,6 @@ class LicenseMetric(StrEnum):
 
     PROCESSOR = "processor"
     NAMED_USER_PLUS = "named_user_plus"
-    NAMED_USER = "named_user"
-    SOCKET = "socket"
-    CONCURRENT_USER = "concurrent_user"
-    APPLICATION_USER = "application_user"
-    OCPU = "ocpu"
-    OTHER = "other"
 
 
 class CpuProfileSource(StrEnum):

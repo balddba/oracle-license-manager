@@ -17,6 +17,7 @@ class HostProductRead(BaseModel):
 
     id: uuid.UUID
     host_id: uuid.UUID
+    product_id: uuid.UUID
     product_name: str
     option_name: str | None
     license_type: HostLicenseType

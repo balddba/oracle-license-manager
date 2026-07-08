@@ -37,6 +37,7 @@ def test_map_product_accepts_legacy_metric_value() -> None:
         {
             "id": str(uuid.uuid4()),
             "agreement_id": str(uuid.uuid4()),
+            "product_id": str(uuid.uuid4()),
             "product_name": "Database Enterprise Edition",
             "metric": "PROCESSOR",
             "quantity": 10,

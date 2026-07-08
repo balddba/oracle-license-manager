@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -13,6 +15,5 @@ class HostProductAssign(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    product_name: str = Field(max_length=256)
-    option_name: str | None = Field(default=None, max_length=256)
+    product_id: uuid.UUID
     notes: str | None = Field(default=None, max_length=4000)

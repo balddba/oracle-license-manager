@@ -65,9 +65,45 @@ def make_post_request(url: str, data: dict) -> dict:
     with urllib.request.urlopen(req) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
+def make_get_request(url: str) -> dict | list:
+    """Send a GET request and return the parsed JSON response."""
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+def get_or_create_product_id(api_base_url: str, name: str, option: str | None = None) -> str:
+    """Find a catalog product ID by name and option, or create a custom one if missing."""
+    import urllib.parse
+    search_query = urllib.parse.urlencode({"search": name})
+    products = make_get_request(f"{api_base_url}/catalog/products?{search_query}")
+    for p in products:
+        if p["product_name"].strip().lower() == name.strip().lower():
+            p_opt = p.get("option_name") or ""
+            o_opt = option or ""
+            if p_opt.strip().lower() == o_opt.strip().lower():
+                return p["id"]
+                
+    # If not found, create a custom product
+    payload = {
+        "price_list_id": "technology-price-list-070617",
+        "category": "Custom",
+        "product_name": name,
+        "option_name": option,
+        "supports_nup": True,
+        "supports_processor": True
+    }
+    created = make_post_request(f"{api_base_url}/catalog/products", payload)
+    return created["id"]
+
 def seed_data(api_base_url: str):
     """Seed the database with realistic mock data using REST API endpoints."""
     print(f"Seeding mock data via API at {api_base_url}...")
+    
+    # Pre-resolve product IDs
+    db_ee_id = get_or_create_product_id(api_base_url, "Database Enterprise Edition", "Enterprise Edition")
+    diag_pack_id = get_or_create_product_id(api_base_url, "Diagnostics Pack", "Diagnostics Pack")
+    tuning_pack_id = get_or_create_product_id(api_base_url, "Tuning Pack", "Tuning Pack")
+    weblogic_suite_id = get_or_create_product_id(api_base_url, "WebLogic Suite", "WebLogic Suite")
     
     # CSI 1: Global Finance Corp (CPU)
     csi1 = make_post_request(f"{api_base_url}/agreements", {
@@ -83,22 +119,19 @@ def seed_data(api_base_url: str):
     
     # Entitlements for CSI 1 (DB EE is 12 -> causes shortfall of 4 cores)
     make_post_request(f"{api_base_url}/agreements/{csi1_id}/entitlements", {
-        "product_name": "Database Enterprise Edition",
-        "option_name": "Enterprise Edition",
+        "product_id": db_ee_id,
         "metric": "processor",
         "quantity": 12,
         "notes": "Core database servers"
     })
     make_post_request(f"{api_base_url}/agreements/{csi1_id}/entitlements", {
-        "product_name": "Diagnostics Pack",
-        "option_name": "Diagnostics Pack",
+        "product_id": diag_pack_id,
         "metric": "processor",
         "quantity": 16,
         "notes": "Diagnostics performance tuning"
     })
     make_post_request(f"{api_base_url}/agreements/{csi1_id}/entitlements", {
-        "product_name": "Tuning Pack",
-        "option_name": "Tuning Pack",
+        "product_id": tuning_pack_id,
         "metric": "processor",
         "quantity": 16,
         "notes": "SQL tuning package"
@@ -117,8 +150,7 @@ def seed_data(api_base_url: str):
     csi2_id = csi2["id"]
     
     make_post_request(f"{api_base_url}/agreements/{csi2_id}/entitlements", {
-        "product_name": "WebLogic Suite",
-        "option_name": "WebLogic Suite",
+        "product_id": weblogic_suite_id,
         "metric": "processor",
         "quantity": 8
     })
@@ -136,8 +168,7 @@ def seed_data(api_base_url: str):
     csi3_id = csi3["id"]
     
     make_post_request(f"{api_base_url}/agreements/{csi3_id}/entitlements", {
-        "product_name": "Database Enterprise Edition",
-        "option_name": "Enterprise Edition",
+        "product_id": db_ee_id,
         "metric": "named_user_plus",
         "quantity": 100
     })
@@ -159,13 +190,13 @@ def seed_data(api_base_url: str):
         "threads_per_core": 2
     })
     make_post_request(f"{api_base_url}/hosts/{h1_id}/entitlements", {
-        "product_name": "Database Enterprise Edition", "option_name": "Enterprise Edition"
+        "product_id": db_ee_id
     })
     make_post_request(f"{api_base_url}/hosts/{h1_id}/entitlements", {
-        "product_name": "Diagnostics Pack", "option_name": "Diagnostics Pack"
+        "product_id": diag_pack_id
     })
     make_post_request(f"{api_base_url}/hosts/{h1_id}/entitlements", {
-        "product_name": "Tuning Pack", "option_name": "Tuning Pack"
+        "product_id": tuning_pack_id
     })
 
     # Host 2: db-prod-02 (CPU, DB EE, Diag)
@@ -185,10 +216,10 @@ def seed_data(api_base_url: str):
         "threads_per_core": 2
     })
     make_post_request(f"{api_base_url}/hosts/{h2_id}/entitlements", {
-        "product_name": "Database Enterprise Edition", "option_name": "Enterprise Edition"
+        "product_id": db_ee_id
     })
     make_post_request(f"{api_base_url}/hosts/{h2_id}/entitlements", {
-        "product_name": "Diagnostics Pack", "option_name": "Diagnostics Pack"
+        "product_id": diag_pack_id
     })
 
     # Host 3: app-prod-01 (CPU, WebLogic Suite)
@@ -208,7 +239,7 @@ def seed_data(api_base_url: str):
         "threads_per_core": 2
     })
     make_post_request(f"{api_base_url}/hosts/{h3_id}/entitlements", {
-        "product_name": "WebLogic Suite", "option_name": "WebLogic Suite"
+        "product_id": weblogic_suite_id
     })
 
     # Host 4: db-dev-01 (NUP, DB EE)
@@ -228,7 +259,7 @@ def seed_data(api_base_url: str):
         "threads_per_core": 2
     })
     make_post_request(f"{api_base_url}/hosts/{h4_id}/entitlements", {
-        "product_name": "Database Enterprise Edition", "option_name": "Enterprise Edition"
+        "product_id": db_ee_id
     })
 
     # Host 5: app-prod-02 (CPU, WebLogic Suite)
@@ -248,7 +279,7 @@ def seed_data(api_base_url: str):
         "threads_per_core": 2
     })
     make_post_request(f"{api_base_url}/hosts/{h5_id}/entitlements", {
-        "product_name": "WebLogic Suite", "option_name": "WebLogic Suite"
+        "product_id": weblogic_suite_id
     })
     print("Mock data seeded successfully.")
     return csi1_id, h1_id

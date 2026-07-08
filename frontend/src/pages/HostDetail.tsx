@@ -21,7 +21,7 @@ import {
   type HostEnvironment,
   type HostLicenseType,
 } from "../api/client";
-import { DEFAULT_PRICE_LIST_ID, formatCatalogLabel } from "../lib/catalog";
+import { formatCatalogLabel } from "../lib/catalog";
 import { formatProcessorLicenseCalc, calculateNamedUsersRequired } from "../lib/licenseMetrics";
 
 const environmentOptions = [
@@ -30,13 +30,6 @@ const environmentOptions = [
 ];
 
 const licenseTypeOptions = [...HOST_LICENSE_TYPE_OPTIONS];
-
-function assignmentKey(product: {
-  product_name: string;
-  option_name: string | null;
-}): string {
-  return `${product.product_name}|${product.option_name ?? ""}`;
-}
 
 function formatApiError(error: unknown, fallback: string): string {
   if (!(error instanceof Error)) {
@@ -65,11 +58,10 @@ export function HostDetail() {
   const [threadsPerCore, setThreadsPerCore] = useState("");
   const [environment, setEnvironment] = useState("");
   const [licenseType, setLicenseType] = useState<HostLicenseType>("cpu");
-  const [assignProductName, setAssignProductName] = useState("");
-  const [assignOptionName, setAssignOptionName] = useState("");
   const [catalogInput, setCatalogInput] = useState("");
   const [catalogSearch, setCatalogSearch] = useState("");
   const [selectedCatalogId, setSelectedCatalogId] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedFactorId, setSelectedFactorId] = useState("");
   const [processorFamilyInput, setProcessorFamilyInput] = useState("");
 
@@ -173,31 +165,12 @@ export function HostDetail() {
     },
   });
 
-  const createCatalogProduct = useMutation({
-    mutationFn: (productName: string) =>
-      api.createCatalogProduct({
-        price_list_id: DEFAULT_PRICE_LIST_ID,
-        category: "Custom",
-        product_name: productName,
-      }),
-    onSuccess: (product) => {
-      applyCatalogProduct(product);
-      setCatalogInput(formatCatalogLabel(product));
-      void queryClient.invalidateQueries({ queryKey: ["catalog-products"] });
-      toast.success("Product added to catalog");
-    },
-    onError: (mutationError) => {
-      toast.danger(formatApiError(mutationError, "Failed to add product to catalog."));
-    },
-  });
-
   const assignProduct = useMutation({
-    mutationFn: (body: { product_name: string; option_name: string | null }) =>
+    mutationFn: (body: { product_id: string }) =>
       api.assignHostProduct(id, body),
     onSuccess: () => {
-      setAssignProductName("");
-      setAssignOptionName("");
       setSelectedCatalogId("");
+      setSelectedProduct(null);
       setCatalogInput("");
       void queryClient.invalidateQueries({ queryKey: ["host-products", id] });
       void queryClient.invalidateQueries({ queryKey: ["hosts"] });
@@ -284,8 +257,7 @@ export function HostDetail() {
 
   const applyCatalogProduct = (product: CatalogProduct) => {
     setSelectedCatalogId(product.id);
-    setAssignProductName(product.product_name);
-    setAssignOptionName(product.option_name ?? "");
+    setSelectedProduct(product);
   };
 
   if (isLoading) {
@@ -295,15 +267,8 @@ export function HostDetail() {
     return <ErrorAlert title="Host not found" message="This host could not be loaded." />;
   }
 
-  const assignedKeys = new Set(hostProducts.map((product) => assignmentKey(product)));
-  const normalizedAssignOption = assignOptionName.trim() || null;
-  const trimmedAssignProductName = assignProductName.trim();
-  const assignDuplicate =
-    trimmedAssignProductName.length > 0 &&
-    assignedKeys.has(assignmentKey({
-      product_name: trimmedAssignProductName,
-      option_name: normalizedAssignOption,
-    }));
+  const assignedIds = new Set(hostProducts.map((product) => product.product_id));
+  const assignDuplicate = selectedCatalogId ? assignedIds.has(selectedCatalogId) : false;
   const settingsDirty =
     environment !== (host.environment ?? "") || licenseType !== host.license_type;
   const saveHostError = saveHostSettings.isError
@@ -386,41 +351,42 @@ export function HostDetail() {
           <CatalogProductField
             products={catalogProducts ?? []}
             selectedId={selectedCatalogId}
+            selectedProduct={selectedProduct}
             inputValue={catalogInput}
             onInputChange={(value) => {
               setCatalogInput(value);
               if (selectedCatalogId) {
-                setSelectedCatalogId("");
-                setAssignOptionName("");
+                const expectedLabel = selectedProduct ? formatCatalogLabel(selectedProduct) : "";
+                if (value !== expectedLabel) {
+                  setSelectedCatalogId("");
+                  setSelectedProduct(null);
+                }
               }
             }}
-            onProductNameChange={setAssignProductName}
+            onProductNameChange={() => {}}
             onProductSelect={(product) => {
               if (product) {
                 applyCatalogProduct(product);
                 setCatalogInput(formatCatalogLabel(product));
               } else {
                 setSelectedCatalogId("");
-                setAssignOptionName("");
+                setSelectedProduct(null);
               }
             }}
-            onCreateProduct={(productName) => createCatalogProduct.mutate(productName)}
-            isCreatingProduct={createCatalogProduct.isPending}
           />
         </div>
         <div className="flex gap-2">
           <Button
             onPress={() => {
-              if (!trimmedAssignProductName || assignDuplicate) {
+              if (!selectedCatalogId || assignDuplicate) {
                 return;
               }
               assignProduct.mutate({
-                product_name: trimmedAssignProductName,
-                option_name: normalizedAssignOption,
+                product_id: selectedCatalogId,
               });
             }}
             isDisabled={
-              !trimmedAssignProductName || assignDuplicate || assignProduct.isPending
+              !selectedCatalogId || assignDuplicate || assignProduct.isPending
             }
           >
             Assign product
