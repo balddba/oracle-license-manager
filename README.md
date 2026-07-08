@@ -1,4 +1,4 @@
-# Oracle License Tracker
+# Oracle License Manager
 
 [![Python](https://img.shields.io/badge/Python-3.13+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -7,7 +7,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
 
-Take control of your Oracle software compliance. **Oracle License Tracker** is a modern, web-based license management and compliance calculator that tracks your Oracle Customer Support Identifiers (CSIs), maps physical CPU core inventory, and computes real-time license requirements.
+Take control of your Oracle software compliance. **Oracle License Manager** is a modern, web-based license management and compliance calculator that tracks your Oracle Customer Support Identifiers (CSIs), maps physical CPU core inventory, and computes real-time license requirements.
 
 Eliminate manual spreadsheets, automate complex processor core factor math, and audit-proof your deployments before Oracle calls.
 

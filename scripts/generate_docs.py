@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Script for building and serving Oracle License Tracker documentation.
+"""Script for building and serving Oracle License Manager documentation.
 
 Supports dependency verification, site directory cleaning, static site building,
 and running a local development server for previewing changes.

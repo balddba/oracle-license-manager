@@ -1,4 +1,4 @@
-# Oracle License Tracker
+# Oracle License Manager
 
 Web application for tracking Oracle license agreements, product entitlements, and host CPU inventory.
 

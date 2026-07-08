@@ -1,6 +1,6 @@
 # User Guide
 
-This guide explains how to use the Oracle License Tracker to manage your Oracle agreements, product entitlements, server CPU hardware inventory, and calculate real-time compliance.
+This guide explains how to use the Oracle License Manager to manage your Oracle agreements, product entitlements, server CPU hardware inventory, and calculate real-time compliance.
 
 ---
 
