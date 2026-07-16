@@ -7,6 +7,7 @@ Runs FastAPI, React (Vite), seeds data, highlights elements, and captures screen
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 import socket
@@ -38,13 +39,6 @@ def setup_playwright():
         subprocess.check_call(["playwright", "install", "chromium"])
 
 
-def get_free_port() -> int:
-    """Find an unused TCP port."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("", 0))
-        return s.getsockname()[1]
-
-
 def wait_for_url(url: str, timeout: float = 30.0) -> bool:
     """Poll a URL until it returns 200 OK or timeout is reached."""
     start = time.time()
@@ -58,6 +52,83 @@ def wait_for_url(url: str, timeout: float = 30.0) -> bool:
             pass
         time.sleep(0.5)
     return False
+
+
+def pick_free_ports(count: int = 2) -> list[int]:
+    """Reserve distinct unused TCP ports for local dev servers.
+
+    Args:
+        count (int): Number of unique ports to allocate.
+
+    Returns:
+        list[int]: Available port numbers.
+    """
+    ports: list[int] = []
+    sockets: list[socket.socket] = []
+    try:
+        while len(ports) < count:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.bind(("", 0))
+            port = sock.getsockname()[1]
+            if port not in ports:
+                ports.append(port)
+                sockets.append(sock)
+    finally:
+        for sock in sockets:
+            sock.close()
+    return ports
+
+
+def start_managed_process(
+    cmd: list[str],
+    cwd: Path,
+    env: dict[str, str],
+    name: str,
+) -> subprocess.Popen[str]:
+    """Start a child process and fail fast when it exits immediately.
+
+    Args:
+        cmd (list[str]): Command and arguments to execute.
+        cwd (Path): Working directory for the child process.
+        env (dict[str, str]): Environment variables for the child process.
+        name (str): Human-readable process label for error messages.
+
+    Returns:
+        subprocess.Popen[str]: Running child process handle.
+
+    Raises:
+        RuntimeError: If the process exits before becoming ready.
+    """
+    proc = subprocess.Popen(
+        cmd,
+        cwd=str(cwd),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    time.sleep(0.75)
+    if proc.poll() is not None:
+        output = proc.stdout.read() if proc.stdout is not None else ""
+        raise RuntimeError(f"{name} failed to start:\n{output}")
+    return proc
+
+
+def read_process_output(proc: subprocess.Popen[str]) -> str:
+    """Read accumulated stdout/stderr from a managed child process.
+
+    Args:
+        proc (subprocess.Popen[str]): Child process handle.
+
+    Returns:
+        str: Captured process output, if any.
+    """
+    if proc.stdout is None:
+        return ""
+    try:
+        return proc.stdout.read()
+    except Exception:
+        return ""
 
 
 def make_post_request(url: str, data: dict) -> dict:
@@ -360,7 +431,12 @@ def inject_highlight_helper(page):
                 const parts = selector.split(":has-text(");
                 const tag = parts[0] || "*";
                 const text = parts[1].replace(/^["']/, "").replace(/["']\\)$/, "");
-                el = Array.from(document.querySelectorAll(tag)).find(e => e.textContent.includes(text));
+                const matches = Array.from(document.querySelectorAll(tag)).filter(
+                    (candidate) => candidate.textContent.includes(text),
+                );
+                el = matches.sort(
+                    (left, right) => left.textContent.length - right.textContent.length,
+                )[0];
             } else {
                 el = document.querySelector(selector);
             }
@@ -375,7 +451,7 @@ def inject_highlight_helper(page):
             if (label) {
                 const badge = document.createElement("div");
                 badge.innerText = label;
-                badge.style.position = "absolute";
+                badge.style.position = "fixed";
                 badge.style.backgroundColor = color;
                 badge.style.color = "white";
                 badge.style.padding = "2px 6px";
@@ -386,14 +462,10 @@ def inject_highlight_helper(page):
                 badge.style.fontFamily = "system-ui, sans-serif";
                 badge.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
                 
-                // Append to parent to prevent issues with 'overflow: hidden' on the target
-                el.parentElement.appendChild(badge);
-                
-                // Calculate absolute position
                 const rect = el.getBoundingClientRect();
-                const parentRect = el.parentElement.getBoundingClientRect();
-                badge.style.left = (rect.left - parentRect.left) + "px";
-                badge.style.top = (rect.top - parentRect.top - 20) + "px";
+                badge.style.left = rect.left + "px";
+                badge.style.top = Math.max(8, rect.top - 20) + "px";
+                document.body.appendChild(badge);
             }
         };
     }""")
@@ -425,7 +497,7 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
 
         # Highlight compliance alert
         page.evaluate(
-            "window.highlightElement('div[role=alert]', 'Compliance Warning')"
+            'window.highlightElement(\'*:has-text("under-licensed")\', "Compliance Warning")'
         )
         # Highlight Shortfall cell in the compliance table for DB Enterprise Edition (first row)
         page.evaluate(
@@ -447,7 +519,7 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
 
         # Highlight CSI creation form card
         page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.flex.flex-col:nth-of-type(1)', 'New CSI Contract Creation')"
+            'window.highlightElement(\'h3:has-text("New agreement")\', "New CSI Contract Creation")'
         )
         # Highlight first agreement entitlements cell
         page.evaluate(
@@ -465,16 +537,14 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
 
         # Highlight details metadata card
         page.evaluate(
-            "window.highlightElement('div.grid.gap-4.md\\\\:grid-cols-3', 'CSI Metadata & Status')"
+            "window.highlightElement('h2.text-2xl', \"CSI Metadata & Status\")"
         )
         # Highlight Add product card
         page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.flex.flex-col:nth-of-type(1)', 'Add Product Entitlement Form')"
+            'window.highlightElement(\'h3:has-text("Add product entitlement")\', "Add Product Entitlement Form")'
         )
         # Highlight entitlements table
-        page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.overflow-hidden.rounded-lg.border', 'Entitlements Database')"
-        )
+        page.evaluate("window.highlightElement('table', 'Entitlements Database')")
 
         page.screenshot(path=str(output_dir / "agreement_detail.png"))
 
@@ -487,7 +557,7 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
 
         # Highlight host creation form card
         page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.flex.flex-col:nth-of-type(1)', 'New Host Server Creation')"
+            'window.highlightElement(\'h3:has-text("New host")\', "New Host Server Creation")'
         )
         # Highlight host compliance button
         page.evaluate(
@@ -499,17 +569,17 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
         # 5. Host Detail
         print(f"Capturing Host detail ({host_id})...")
         page.goto(f"{frontend_url}/hosts/{host_id}")
-        page.wait_for_selector("div.space-y-6")
+        page.wait_for_selector('h3:has-text("CPU profile")')
         page.wait_for_timeout(1000)
         inject_highlight_helper(page)
 
         # Highlight CPU profile card
         page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.flex.flex-col:nth-of-type(2)', 'Host CPU Core Inventory')"
+            'window.highlightElement(\'h3:has-text("CPU profile")\', "Host CPU Core Inventory")'
         )
         # Highlight product assignments card
         page.evaluate(
-            "window.highlightElement('div.space-y-6 > div.flex.flex-col:nth-of-type(3)', 'Product Entitlements Pool Assignment')"
+            'window.highlightElement(\'h3:has-text("Assigned products")\', "Product Entitlements Pool Assignment")'
         )
 
         page.screenshot(path=str(output_dir / "host_detail.png"))
@@ -521,15 +591,51 @@ def capture_screenshots(frontend_url: str, csi_id: str, host_id: str, output_dir
         page.wait_for_timeout(1000)
         inject_highlight_helper(page)
 
-        # Highlight export buttons card
+        # Highlight export buttons
         page.evaluate(
-            "window.highlightElement('div.flex.flex-col.p-4', 'Compliance Export Controls')"
+            'window.highlightElement(\'button:has-text("Export PDF")\', "Compliance Export Controls")'
         )
 
         page.screenshot(path=str(output_dir / "reports.png"))
 
         browser.close()
         print("All screenshots captured successfully.")
+
+
+def write_screenshot_version(output_dir: Path) -> str:
+    """Write a cache-busting stamp used by MkDocs when rendering docs pages.
+
+    Args:
+        output_dir (Path): Directory containing generated screenshot PNG files.
+
+    Returns:
+        str: Unix timestamp written to `.screenshot-version`.
+    """
+    version = str(int(time.time()))
+    version_path = output_dir / ".screenshot-version"
+    version_path.write_text(f"{version}\n", encoding="utf-8")
+    return version
+
+
+_README_SCREENSHOT_RE = re.compile(r"(docs/images/[^)\s\"']+\.png)(?:\?v=\d+)?")
+
+
+def update_readme_screenshot_urls(readme_path: Path, version: str) -> int:
+    """Refresh README screenshot links with a cache-busting query parameter.
+
+    Args:
+        readme_path (Path): Path to the repository README file.
+        version (str): Screenshot generation stamp.
+
+    Returns:
+        int: Number of README image URLs updated.
+    """
+    content = readme_path.read_text(encoding="utf-8")
+    updated = _README_SCREENSHOT_RE.sub(rf"\1?v={version}", content)
+    if updated == content:
+        return 0
+    readme_path.write_text(updated, encoding="utf-8")
+    return len(_README_SCREENSHOT_RE.findall(content))
 
 
 def main():
@@ -556,58 +662,83 @@ sqlite:
 """
         f.write(yaml_content)
 
-    # Resolve ports
-    backend_port = 8001
-    frontend_port = 5174
-
-    # Launch backend uvicorn process
-    print(f"Starting backend on port {backend_port}...")
+    # Pick unused ports so stale local dev servers cannot satisfy health checks.
+    backend_port, frontend_port = pick_free_ports(2)
+    frontend_origin = f"http://localhost:{frontend_port}"
     backend_env = os.environ.copy()
     backend_env["LICENSE_TRACKER_CONFIG_PATH"] = str(temp_config_path)
-    backend_env["LICENSE_TRACKER_CORS_ORIGINS"] = (
-        f'["http://localhost:{frontend_port}"]'
-    )
-    backend_proc = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "uvicorn",
-            "license_tracker.main:app",
-            "--port",
-            str(backend_port),
-        ],
-        cwd=str(project_root / "backend"),
-        env=backend_env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+    backend_env["LICENSE_TRACKER_CORS_ORIGINS"] = f'["{frontend_origin}"]'
+
+    temp_env_path = project_root / "frontend" / ".env.screenshot.local"
+    temp_env_path.write_text(
+        f"VITE_API_BASE_URL=http://localhost:{backend_port}\n",
+        encoding="utf-8",
     )
 
-    # Launch frontend Vite process
-    print(f"Starting frontend on port {frontend_port}...")
-    frontend_env = os.environ.copy()
-    frontend_env["VITE_API_BASE_URL"] = f"http://localhost:{backend_port}"
-    frontend_proc = subprocess.Popen(
-        ["npm", "run", "dev", "--", "--port", str(frontend_port)],
-        cwd=str(project_root / "frontend"),
-        env=frontend_env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    backend_proc: subprocess.Popen[str] | None = None
+    frontend_proc: subprocess.Popen[str] | None = None
+
+    try:
+        print(f"Starting backend on port {backend_port}...")
+        backend_proc = start_managed_process(
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "license_tracker.main:app",
+                "--port",
+                str(backend_port),
+            ],
+            project_root / "backend",
+            backend_env,
+            "Backend server",
+        )
+
+        print(f"Starting frontend on port {frontend_port}...")
+        frontend_env = os.environ.copy()
+        frontend_env["VITE_API_BASE_URL"] = f"http://localhost:{backend_port}"
+        frontend_proc = start_managed_process(
+            [
+                "npm",
+                "run",
+                "dev",
+                "--",
+                "--port",
+                str(frontend_port),
+                "--mode",
+                "screenshot",
+            ],
+            project_root / "frontend",
+            frontend_env,
+            "Frontend server",
+        )
+    except RuntimeError as exc:
+        print(exc)
+        if backend_proc is not None:
+            backend_proc.terminate()
+        if frontend_proc is not None:
+            frontend_proc.terminate()
+        temp_env_path.unlink(missing_ok=True)
+        sys.exit(1)
 
     # Wait for servers
     print("Waiting for backend API health check to pass...")
     api_base_url = f"http://localhost:{backend_port}/api/v1"
-    if not wait_for_url(f"{api_base_url}/health", timeout=30):
+    if not wait_for_url(f"{api_base_url}/health", timeout=60):
         print("Backend server failed to start or pass health check in time.")
+        print(read_process_output(backend_proc))
         backend_proc.terminate()
         frontend_proc.terminate()
+        temp_env_path.unlink(missing_ok=True)
         sys.exit(1)
 
     print("Waiting for frontend web application server...")
-    if not wait_for_url(f"http://localhost:{frontend_port}", timeout=30):
+    if not wait_for_url(frontend_origin, timeout=60):
         print("Frontend server failed to start in time.")
+        print(read_process_output(frontend_proc))
         backend_proc.terminate()
         frontend_proc.terminate()
+        temp_env_path.unlink(missing_ok=True)
         sys.exit(1)
 
     try:
@@ -619,16 +750,35 @@ sqlite:
         capture_screenshots(
             f"http://localhost:{frontend_port}", csi_id, host_id, output_dir
         )
+        version = write_screenshot_version(output_dir)
+        readme_updates = update_readme_screenshot_urls(
+            project_root / "README.md", version
+        )
+        print(
+            f"Updated screenshot cache buster: docs/images/.screenshot-version ({version})"
+        )
+        print(f"Updated {readme_updates} screenshot URL(s) in README.md")
+        print(
+            "Reload the docs page in your browser. If images still look stale, restart "
+            "`uv run mkdocs serve` and hard-refresh (Cmd+Shift+R)."
+        )
+        print(
+            "Commit and push docs/images/*.png, docs/images/.screenshot-version, and "
+            "README.md to refresh GitHub previews."
+        )
 
     finally:
         # Graceful shutdown
         print("Shutting down backend and frontend server processes...")
-        backend_proc.terminate()
-        frontend_proc.terminate()
-        backend_proc.wait()
-        frontend_proc.wait()
+        if backend_proc is not None:
+            backend_proc.terminate()
+            backend_proc.wait()
+        if frontend_proc is not None:
+            frontend_proc.terminate()
+            frontend_proc.wait()
 
         # Cleanup temporary files
+        temp_env_path.unlink(missing_ok=True)
         if temp_config_path.exists():
             temp_config_path.unlink()
         if temp_db_path.exists():

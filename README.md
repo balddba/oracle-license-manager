@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/olm_logo.png" alt="Oracle License Manager" width="480">
+</p>
+
 # Oracle License Manager
 
 [![Python](https://img.shields.io/badge/Python-3.13+-blue?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -17,28 +21,28 @@ Eliminate manual spreadsheets, automate complex processor core factor math, and 
 
 ### 📊 Real-Time Compliance Dashboard
 Know your compliance posture at a glance. The dashboard aggregates all purchased entitlements across contracts and contrasts them against live host CPU core usage, displaying a real-time surplus or shortfall balance.
-![Dashboard Overview](docs/images/dashboard.png)
+![Dashboard Overview](docs/images/dashboard.png?v=1784233829)
 
 ### ⚙️ Automated Core Factor Calculator
 Tackle complex Oracle processor core licensing rules automatically.
 * Input server CPU details (e.g. `Intel Xeon Platinum` or `AMD EPYC`) and the application automatically queries the preloaded **Oracle Processor Core Factor Table** (e.g., resolving the standard `0.5` factor).
 * Supports manual Core Factor overrides for custom virtualization rules (e.g., hard partitioning, IBM PowerVM, or LPARs).
 * Calculates both **Processor (CPU)** and **Named User Plus (NUP)** requirements.
-![Host Configuration & CPU Profile](docs/images/host_detail.png)
+![Host Configuration & CPU Profile](docs/images/host_detail.png?v=1784233829)
 
 ### 📜 Contract & Agreement Repository (CSI)
 Keep your Oracle contracts organized.
 * Store contracts mapped by their **Customer Support Identifier (CSI)**.
 * Log support levels (Standard, Gold, Premier), validity dates, and active renewal alerts.
 * Tightly linked to the preloaded **Oracle Technology Price List Catalog** for error-free product selection.
-![Agreements List](docs/images/agreements.png)
+![Agreements List](docs/images/agreements.png?v=1784233829)
 
 ### 📈 Executive Reports & PDF Exports
 Compile auditable snapshots of your compliance estate with a single click.
 * **Visual Insights**: Interactive bar charts on the Reports page display compliance balances.
 * **Professional PDF Exports**: Generates executive-ready PDF audit reports featuring embedded visual compliance charts, structured summaries, and auto-wrapped inventory tables.
 * **Spreadsheet CSV Exports**: Export clean, tabular datasets for integration with third-party tools.
-![Executive Reporting Page](docs/images/reports.png)
+![Executive Reporting Page](docs/images/reports.png?v=1784233829)
 
 ---
 

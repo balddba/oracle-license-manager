@@ -91,8 +91,13 @@ uv run --with playwright python scripts/generate_screenshots.py
 
 This script:
 1. Provisions a temporary, clean SQLite database.
-2. Boots up local backend (port 8001) and frontend (port 5174) servers.
+2. Boots up local backend and frontend servers on unused ports.
 3. Seeds realistic mock compliance and host datasets.
 4. Uses Playwright to navigate, highlight target elements, and write images to `docs/images/`.
-5. Tears down all server processes cleanly.
+5. Updates `docs/images/.screenshot-version` and `README.md` image URLs so previews pick up fresh PNGs.
+6. Tears down all server processes cleanly.
+
+If you preview with `uv run mkdocs serve`, reload the page after regeneration. MkDocs appends
+`?v=<timestamp>` to screenshot URLs automatically. For GitHub, commit and push the updated PNG
+files, `.screenshot-version`, and `README.md`.
 

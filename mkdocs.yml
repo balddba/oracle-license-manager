@@ -6,8 +6,12 @@ plugins:
   - search
   - social
 
+hooks:
+  - hooks/screenshot_cache_bust.py
+
 theme:
   name: material
+  logo: images/logo.png
   palette:
     - scheme: default
       primary: indigo

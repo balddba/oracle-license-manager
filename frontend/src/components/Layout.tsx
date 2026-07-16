@@ -1,6 +1,5 @@
 import { Link, NavLink } from "react-router-dom";
-import logoLight from "../assets/logo.png";
-import logoDark from "../assets/logo_dark.png";
+import logo from "../assets/logo.png";
 import { useAppTheme } from "./ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 
@@ -25,12 +24,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-2">
             <img
-              src={resolvedTheme === "dark" ? logoDark : logoLight}
+              src={logo}
               alt="Oracle License Manager"
-              className="h-20 w-auto object-contain"
+              className="h-28 w-auto object-contain"
             />
           </Link>
           <div className="flex items-center gap-6">
